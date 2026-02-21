@@ -1,0 +1,17 @@
+app:
+  name: "CodeActivity"
+  version: "0.1.0"
+
+server:
+  host: "0.0.0.0"
+  port: 10000
+  debug: true
+
+web:
+  port: 10001
+
+event_types:
+  - keystroke
+  - file_save
+  - file_open
+  - terminal_command

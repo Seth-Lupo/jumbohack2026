@@ -1,0 +1,62 @@
+We are making a project for a hackathon.
+
+Goal: Help CS  TAs/professors see student coding activity and workflow to understand what they struggle with. 
+
+Overall archetecture: Please make a **VSCODE Client** that monitors students tracking, and sends student code changes back up to a time series database. We do ML/Algo/LLM processing to turn these raw atomic changes and student activity into a meaningful understanding of their workflow.
+
+Client 1: VSCode: We are using a VSCODE extension connecting to a central server to continously send data up to there. (We will have to do authentication, and send questions to central server)
+
+Server Central: Python Flask: This will do various computation and possibly necessary prompting. This will take VSCODE logging data to. This will also provide analytics endpoints. There will be /api for all the programmtic stuff.  
+
+Database: Supabase: This handles true authentication. VSCODE client will auth with this, webview will auth with this. This will store time series logs of edits. 
+
+Frontend Websview: React: This will provide analytics to TAs and Professors based on the collected from the vscode clients. React. Tailwind. 
+
+NOTE: 
+
+Each professor will own a "class". Each class will have "students" and "assistants" accounts 
+associated it with. "students" will have timeseries associated with it. 
+Students and assistants wont make accounts, they will be determined ahead of time.
+
+We are going to define schema using supabase sql migrations. Will will keep typescript 
+script to populate it. 
+
+Exact timeseries/edit schema will be determined later. 
+
+General groups of endpoints, on flask server.
+/ (for static pages)
+/api/logger (for vscode)
+/api/data (for analtics)
+
+Authentication is handled by Supabase (it email and password)
+Make sure that flask server has modular functionality to get the user who 
+requested it so it can do proxied queries to Supabase.
+
+-----
+
+Directory Structucture.
+
+USE DOCKER COMPOSE. SPLIT EACH SERVICE INTO A DEDICATED SUBDIRECTORY.
+ORGANIZE TO BEST OF ABILITY.
+
+Docker compose run should be able to run the full app.
+
+Make sure supabase has clear migrations.
+
+-----
+
+MAKE SURE FILES ARE MODULAR!!!!! MODULAR!!! try to keep file small.
+
+Design should value succintness and clarify.
+This dev environment should easily run on someone elses machine.
+
+Do a simple ./run.sh script that works on mac and windows to start developement.
+
+MAKE SURE TO HAVE A GLOBAL config.yaml and .env with .env.example in top level directories (config for global vars and .env.example for secrets)
+
+Make sure stuff is coherant and connected. 
+Create the initial directory structure.
+
+
+
+ 

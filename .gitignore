@@ -1,0 +1,45 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+**/venv/
+**/.venv/
+*.egg
+
+# Node
+**/node_modules/
+web/dist/
+vscode-extension/out/
+package-lock.json
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+._*
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
