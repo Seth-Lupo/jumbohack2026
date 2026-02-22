@@ -33,10 +33,16 @@ type TimeBar = {
 type ReplayStep = {
   id: string;
   title: string;
-  filePath: string;
   diff: string;
   before: string;
   after: string;
+  durationSeconds: number;
+};
+
+type ReplayFile = {
+  filePath: string;
+  baseInsight: string;
+  steps: ReplayStep[];
 };
 
 const students: StudentRecord[] = [
@@ -166,71 +172,140 @@ const classTimeBars: TimeBar[] = [
   { label: "Writing Explanations", hours: 9, color: "#6366f1" },
 ];
 
-const replayByStudent: Record<string, ReplayStep[]> = {
+const replayByStudent: Record<string, ReplayFile[]> = {
   "s-001": [
     {
-      id: "avery-1",
-      title: "Fix off-by-one in loop bounds",
       filePath: "src/loops.ts",
-      diff: averyStep1Diff,
-      before:
-        "export function countPassed(scores: number[]) {\n  let passed = 0;\n  for (let i = 0; i <= scores.length; i++) {\n    if (scores[i] >= 70) passed += 1;\n  }\n  return passed;\n}\n",
-      after:
-        "export function countPassed(scores: number[]) {\n  let passed = 0;\n  for (let i = 0; i < scores.length; i++) {\n    if (scores[i] >= 70) passed += 1;\n  }\n\n  return passed;\n}\n",
+      baseInsight:
+        "Avery spent most time fixing loop control mistakes, especially around array bounds and readability.",
+      steps: [
+        {
+          id: "avery-1",
+          title: "Fix off-by-one in loop bounds",
+          diff: averyStep1Diff,
+          before:
+            "export function countPassed(scores: number[]) {\n  let passed = 0;\n  for (let i = 0; i <= scores.length; i++) {\n    if (scores[i] >= 70) passed += 1;\n  }\n  return passed;\n}\n",
+          after:
+            "export function countPassed(scores: number[]) {\n  let passed = 0;\n  for (let i = 0; i < scores.length; i++) {\n    if (scores[i] >= 70) passed += 1;\n  }\n\n  return passed;\n}\n",
+          durationSeconds: 6,
+        },
+        {
+          id: "avery-2",
+          title: "Introduce local score variable",
+          diff: averyStep2Diff,
+          before:
+            "export function countPassed(scores: number[]) {\n  let passed = 0;\n  for (let i = 0; i < scores.length; i++) {\n    if (scores[i] >= 70) passed += 1;\n  }\n\n  return passed;\n}\n",
+          after:
+            "export function countPassed(scores: number[]) {\n  let passed = 0;\n  for (let i = 0; i < scores.length; i++) {\n    const score = scores[i];\n    if (score >= 70) passed += 1;\n  }\n\n  return passed;\n}\n",
+          durationSeconds: 4,
+        },
+      ],
     },
     {
-      id: "avery-2",
-      title: "Introduce local score variable",
-      filePath: "src/loops.ts",
-      diff: averyStep2Diff,
-      before:
-        "export function countPassed(scores: number[]) {\n  let passed = 0;\n  for (let i = 0; i < scores.length; i++) {\n    if (scores[i] >= 70) passed += 1;\n  }\n\n  return passed;\n}\n",
-      after:
-        "export function countPassed(scores: number[]) {\n  let passed = 0;\n  for (let i = 0; i < scores.length; i++) {\n    const score = scores[i];\n    if (score >= 70) passed += 1;\n  }\n\n  return passed;\n}\n",
+      filePath: "notes/reflection.md",
+      baseInsight:
+        "Avery's reflection notes show stronger self-correction after seeing failing tests.",
+      steps: [
+        {
+          id: "avery-notes-1",
+          title: "Document loop bug takeaway",
+          diff: "diff --git a/notes/reflection.md b/notes/reflection.md\n@@ -1,2 +1,3 @@\n-I need to recheck loops.\n+I need to recheck loops for < vs <= and test edge cases first.\n+I will write one tiny test before editing next time.\n",
+          before: "# Reflection\nI need to recheck loops.\n",
+          after:
+            "# Reflection\nI need to recheck loops for < vs <= and test edge cases first.\nI will write one tiny test before editing next time.\n",
+          durationSeconds: 3,
+        },
+      ],
     },
   ],
   "s-002": [
     {
-      id: "noah-1",
-      title: "Add traversal intent comment",
       filePath: "src/tree.ts",
-      diff: noahStep1Diff,
-      before:
-        "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n  return [...left, node.value, ...right];\n}\n",
-      after:
-        "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n\n  // keep root in between left and right traversal\n  return [...left, node.value, ...right];\n}\n",
+      baseInsight:
+        "Noah's code is structurally correct; most edits are about clarifying algorithm intent and communication.",
+      steps: [
+        {
+          id: "noah-1",
+          title: "Add traversal intent comment",
+          diff: noahStep1Diff,
+          before:
+            "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n  return [...left, node.value, ...right];\n}\n",
+          after:
+            "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n\n  // keep root in between left and right traversal\n  return [...left, node.value, ...right];\n}\n",
+          durationSeconds: 4,
+        },
+        {
+          id: "noah-2",
+          title: "Refine comment terminology",
+          diff: noahStep2Diff,
+          before:
+            "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n\n  // keep root in between left and right traversal\n  return [...left, node.value, ...right];\n}\n",
+          after:
+            "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n\n  // in-order traversal: left, root, right\n  return [...left, node.value, ...right];\n}\n",
+          durationSeconds: 2,
+        },
+      ],
     },
     {
-      id: "noah-2",
-      title: "Refine comment terminology",
-      filePath: "src/tree.ts",
-      diff: noahStep2Diff,
-      before:
-        "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n\n  // keep root in between left and right traversal\n  return [...left, node.value, ...right];\n}\n",
-      after:
-        "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n\n  // in-order traversal: left, root, right\n  return [...left, node.value, ...right];\n}\n",
+      filePath: "notes/explanation.md",
+      baseInsight:
+        "Noah often backfills explanations after coding, which is good but can happen earlier.",
+      steps: [
+        {
+          id: "noah-notes-1",
+          title: "Clarify traversal ordering",
+          diff: "diff --git a/notes/explanation.md b/notes/explanation.md\n@@ -1,2 +1,3 @@\n-In-order means left and right around root.\n+In-order means left subtree, then root, then right subtree.\n+This matches the array spread order in my return statement.\n",
+          before: "# Traversal Notes\nIn-order means left and right around root.\n",
+          after:
+            "# Traversal Notes\nIn-order means left subtree, then root, then right subtree.\nThis matches the array spread order in my return statement.\n",
+          durationSeconds: 3,
+        },
+      ],
     },
   ],
   "s-003": [
     {
-      id: "mia-1",
-      title: "Trim input before validation",
       filePath: "src/input.ts",
-      diff: miaStep1Diff,
-      before:
-        "export function isValidName(name: string) {\n  return name.length > 0;\n}\n\nexport function formatName(name: string) {\n  return name.trim();\n}\n",
-      after:
-        "export function isValidName(name: string) {\n  const trimmed = name.trim();\n  return trimmed.length > 0;\n}\n\nexport function formatName(name: string) {\n  return name.trim();\n}\n",
+      baseInsight:
+        "Mia improved input handling steadily; most time was spent tightening validation edge cases.",
+      steps: [
+        {
+          id: "mia-1",
+          title: "Trim input before validation",
+          diff: miaStep1Diff,
+          before:
+            "export function isValidName(name: string) {\n  return name.length > 0;\n}\n\nexport function formatName(name: string) {\n  return name.trim();\n}\n",
+          after:
+            "export function isValidName(name: string) {\n  const trimmed = name.trim();\n  return trimmed.length > 0;\n}\n\nexport function formatName(name: string) {\n  return name.trim();\n}\n",
+          durationSeconds: 5,
+        },
+        {
+          id: "mia-2",
+          title: "Strengthen validation and normalize spaces",
+          diff: miaStep2Diff,
+          before:
+            "export function isValidName(name: string) {\n  const trimmed = name.trim();\n  return trimmed.length > 0;\n}\n\nexport function formatName(name: string) {\n  return name.trim();\n}\n",
+          after:
+            "export function isValidName(name: string) {\n  const trimmed = name.trim();\n  return trimmed.length >= 2;\n}\n\nexport function formatName(name: string) {\n  return name.trim().replace(/\\s+/g, \" \");\n}\n",
+          durationSeconds: 5,
+        },
+      ],
     },
     {
-      id: "mia-2",
-      title: "Strengthen validation and normalize spaces",
-      filePath: "src/input.ts",
-      diff: miaStep2Diff,
-      before:
-        "export function isValidName(name: string) {\n  const trimmed = name.trim();\n  return trimmed.length > 0;\n}\n\nexport function formatName(name: string) {\n  return name.trim();\n}\n",
-      after:
-        "export function isValidName(name: string) {\n  const trimmed = name.trim();\n  return trimmed.length >= 2;\n}\n\nexport function formatName(name: string) {\n  return name.trim().replace(/\\s+/g, \" \");\n}\n",
+      filePath: "notes/validation-plan.md",
+      baseInsight:
+        "Mia's written plan became more concrete once she listed specific invalid-name examples.",
+      steps: [
+        {
+          id: "mia-notes-1",
+          title: "Add concrete invalid cases",
+          diff: "diff --git a/notes/validation-plan.md b/notes/validation-plan.md\n@@ -1,2 +1,3 @@\n-Need to test names.\n+Need to test names: empty, single-char, and extra spaces.\n+Also ensure output collapses repeated spaces.\n",
+          before: "# Validation Plan\nNeed to test names.\n",
+          after:
+            "# Validation Plan\nNeed to test names: empty, single-char, and extra spaces.\nAlso ensure output collapses repeated spaces.\n",
+          durationSeconds: 3,
+        },
+      ],
     },
   ],
 };
@@ -382,16 +457,23 @@ function App() {
   const [selectedStudentId, setSelectedStudentId] = useState(students[0].id);
 
   const [replayStudentId, setReplayStudentId] = useState(students[0].id);
+  const [selectedReplayFilePath, setSelectedReplayFilePath] = useState(
+    replayByStudent[students[0].id]?.[0]?.filePath ?? "",
+  );
   const [replayStepIndex, setReplayStepIndex] = useState(0);
-  const [replayContent, setReplayContent] = useState("");
-  const [autoPlayReplay, setAutoPlayReplay] = useState(true);
-  const [animateReplayStep, setAnimateReplayStep] = useState(false);
-  const [replayAnimationNonce, setReplayAnimationNonce] = useState(0);
+  const [isReplayPlaying, setIsReplayPlaying] = useState(false);
+  const [insightMessages, setInsightMessages] = useState<string[]>([]);
+  const [insightInput, setInsightInput] = useState("");
+  const [replayDisplayContent, setReplayDisplayContent] = useState("");
 
   const selectedStudent = students.find((student) => student.id === selectedStudentId) ?? students[0];
   const replayStudent = students.find((student) => student.id === replayStudentId) ?? students[0];
-  const replaySteps = replayByStudent[replayStudentId] ?? [];
+  const replayFiles = replayByStudent[replayStudentId] ?? [];
+  const selectedReplayFile =
+    replayFiles.find((file) => file.filePath === selectedReplayFilePath) ?? replayFiles[0];
+  const replaySteps = selectedReplayFile?.steps ?? [];
   const replayStep = replaySteps[replayStepIndex];
+  const replayTotalDuration = replaySteps.reduce((total, step) => total + step.durationSeconds, 0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -402,85 +484,119 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const steps = replayByStudent[replayStudentId] ?? [];
-    setReplayStepIndex(0);
-    setReplayContent(steps[0]?.after ?? "");
-    setAnimateReplayStep(false);
+    const files = replayByStudent[replayStudentId] ?? [];
+    setSelectedReplayFilePath(files[0]?.filePath ?? "");
+    setIsReplayPlaying(false);
   }, [replayStudentId]);
 
   useEffect(() => {
-    const step = (replayByStudent[replayStudentId] ?? [])[replayStepIndex];
-    const steps = replayByStudent[replayStudentId] ?? [];
-    if (!step) {
-      setReplayContent("");
+    const file = (replayByStudent[replayStudentId] ?? []).find(
+      (item) => item.filePath === selectedReplayFilePath,
+    );
+    if (!file) {
+      setReplayStepIndex(0);
+      setInsightMessages([]);
+      setReplayDisplayContent("");
       return;
     }
-    if (!animateReplayStep) {
-      setReplayContent(step.after);
+    setReplayStepIndex(0);
+    setInsightMessages([file.baseInsight]);
+    setIsReplayPlaying(false);
+  }, [replayStudentId, selectedReplayFilePath]);
+
+  useEffect(() => {
+    if (!isReplayPlaying || replaySteps.length === 0 || !replayStep) return;
+    if (replayStepIndex >= replaySteps.length - 1) {
+      setIsReplayPlaying(false);
       return;
     }
 
-    const prefix = sharedPrefixLength(step.before, step.after);
-    let currentText = step.before;
+    const stepDurationMs = Math.max(700, replayStep.durationSeconds * 900);
+    const timerId = window.setTimeout(() => {
+      setReplayStepIndex((prev) => Math.min(prev + 1, replaySteps.length - 1));
+    }, stepDurationMs);
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [isReplayPlaying, replayStep, replayStepIndex, replaySteps]);
+
+  useEffect(() => {
+    if (!replayStep) {
+      setReplayDisplayContent("");
+      return;
+    }
+    const prefix = sharedPrefixLength(replayStep.before, replayStep.after);
+    let currentText = replayStep.before;
     let timeoutId = 0;
     let cancelled = false;
 
-    setReplayContent(currentText);
+    setReplayDisplayContent(currentText);
 
     const deletePhase = () => {
       if (cancelled) return;
       if (currentText.length > prefix) {
         currentText = currentText.slice(0, -1);
-        setReplayContent(currentText);
-        timeoutId = window.setTimeout(deletePhase, 5);
+        setReplayDisplayContent(currentText);
+        timeoutId = window.setTimeout(deletePhase, 6);
         return;
       }
-      timeoutId = window.setTimeout(typePhase, 60);
+      timeoutId = window.setTimeout(typePhase, 50);
     };
 
     const typePhase = () => {
       if (cancelled) return;
-      if (currentText.length < step.after.length) {
-        currentText = step.after.slice(0, currentText.length + 1);
-        setReplayContent(currentText);
-        timeoutId = window.setTimeout(typePhase, 5);
+      if (currentText.length < replayStep.after.length) {
+        currentText = replayStep.after.slice(0, currentText.length + 1);
+        setReplayDisplayContent(currentText);
+        timeoutId = window.setTimeout(typePhase, 6);
         return;
       }
-      if (autoPlayReplay && replayStepIndex < steps.length - 1) {
-        timeoutId = window.setTimeout(() => {
-          setAnimateReplayStep(true);
-          setReplayAnimationNonce((prev) => prev + 1);
-          setReplayStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
-        }, 900);
-        return;
-      }
-      setAnimateReplayStep(false);
     };
 
-    timeoutId = window.setTimeout(deletePhase, 220);
-
+    timeoutId = window.setTimeout(deletePhase, 120);
     return () => {
       cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [replayStudentId, replayStepIndex, autoPlayReplay, animateReplayStep, replayAnimationNonce]);
+  }, [replayStudentId, selectedReplayFilePath, replayStepIndex, replayStep]);
 
   function handleReplayStepSelect(index: number) {
-    setAnimateReplayStep(false);
+    setIsReplayPlaying(false);
     setReplayStepIndex(index);
   }
 
-  function handleAnimatedReplayStepChange(index: number) {
-    if (index === replayStepIndex) return;
-    setAnimateReplayStep(true);
-    setReplayAnimationNonce((prev) => prev + 1);
-    setReplayStepIndex(index);
+  function handleReplayStepBackward() {
+    if (replayStepIndex === 0) return;
+    setIsReplayPlaying(false);
+    setReplayStepIndex((prev) => Math.max(prev - 1, 0));
   }
 
-  function handleReplayCurrentStep() {
-    if (!replayStep) return;
-    setAnimateReplayStep(true);
-    setReplayAnimationNonce((prev) => prev + 1);
+  function handleReplayStepForward() {
+    if (replayStepIndex >= replaySteps.length - 1) return;
+    setIsReplayPlaying(false);
+    setReplayStepIndex((prev) => Math.min(prev + 1, replaySteps.length - 1));
+  }
+
+  function handleReplayPlayPause() {
+    if (replaySteps.length === 0) return;
+    if (replayStepIndex >= replaySteps.length - 1) {
+      setReplayStepIndex(0);
+      setIsReplayPlaying(true);
+      return;
+    }
+    setIsReplayPlaying((prev) => !prev);
+  }
+
+  function handleInsightSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const query = insightInput.trim();
+    if (!query) return;
+    setInsightMessages((prev) => [
+      ...prev,
+      `Teacher: ${query}`,
+      "AI: Placeholder response. Connect this to your model to answer teacher follow-up questions and extend the insight history.",
+    ]);
+    setInsightInput("");
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -498,8 +614,9 @@ function App() {
     setActiveTab("student");
     setSelectedStudentId(students[0].id);
     setReplayStudentId(students[0].id);
+    setSelectedReplayFilePath(replayByStudent[students[0].id]?.[0]?.filePath ?? "");
     setReplayStepIndex(0);
-    setAnimateReplayStep(false);
+    setIsReplayPlaying(false);
   }
 
   if (!session) {
@@ -748,10 +865,17 @@ function App() {
         <section style={{ border: "1px solid #ddd", borderRadius: 10, padding: "1rem" }}>
           <h2 style={{ marginTop: 0 }}>Student Progress Replay</h2>
           <p style={{ marginTop: "0.4rem", color: "#4b5563" }}>
-            Select a student and watch how edits evolved with typing/deleting animation tied to diff files.
+            Switch students and review their edits in a player-style timeline with file-level AI insights.
           </p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "0.8rem", marginBottom: "1rem" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: "0.8rem",
+              marginBottom: "1rem",
+            }}
+          >
             <div>
               <label htmlFor="replay-student" style={{ display: "block", marginBottom: "0.35rem" }}>
                 Student
@@ -769,97 +893,171 @@ function App() {
                 ))}
               </select>
             </div>
-            <div>
-              <label htmlFor="replay-step" style={{ display: "block", marginBottom: "0.35rem" }}>
-                Diff Step
-              </label>
-                <select
-                  id="replay-step"
-                  value={replayStepIndex}
-                  onChange={(e) => handleReplayStepSelect(Number(e.target.value))}
-                  style={{ width: "100%", padding: "0.5rem" }}
-                >
-                {replaySteps.map((step, idx) => (
-                  <option key={step.id} value={idx}>
-                    {idx + 1}. {step.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="replay-auto" style={{ display: "block", marginBottom: "0.35rem" }}>
-                Playback
-              </label>
-              <button
-                id="replay-auto"
-                onClick={() => setAutoPlayReplay((prev) => !prev)}
-                style={{ width: "100%", padding: "0.55rem", border: "1px solid #bbb", borderRadius: 6, background: "#fff" }}
-              >
-                {autoPlayReplay ? "Auto-Play: ON" : "Auto-Play: OFF"}
-              </button>
-            </div>
           </div>
 
-          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
-            <button
-              onClick={() => handleAnimatedReplayStepChange(Math.max(replayStepIndex - 1, 0))}
-              disabled={replayStepIndex === 0}
-              style={{ padding: "0.45rem 0.8rem" }}
-            >
-              Previous Step
-            </button>
-            <button
-              onClick={() => handleAnimatedReplayStepChange(Math.min(replayStepIndex + 1, replaySteps.length - 1))}
-              disabled={replayStepIndex >= replaySteps.length - 1}
-              style={{ padding: "0.45rem 0.8rem" }}
-            >
-              Next Step
-            </button>
-            <button
-              onClick={handleReplayCurrentStep}
-              style={{ padding: "0.45rem 0.8rem" }}
-            >
-              Replay Current Step
-            </button>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(340px, 1.2fr) minmax(320px, 1fr)", gap: "1rem" }}>
-            <section style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: "0.75rem", background: "#0f172a" }}>
-              <p style={{ color: "#cbd5e1", marginTop: 0, marginBottom: "0.5rem" }}>
-                {replayStudent.name} editing <code>{replayStep?.filePath ?? "-"}</code>
-              </p>
-              <pre
-                style={{
-                  margin: 0,
-                  color: "#e2e8f0",
-                  minHeight: 280,
-                  whiteSpace: "pre-wrap",
-                  fontSize: 13,
-                  lineHeight: 1.45,
-                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                }}
-              >
-                {replayContent}
-                <span style={{ opacity: 0.75 }}>|</span>
-              </pre>
-            </section>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
             <section style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: "0.75rem", background: "#f8fafc" }}>
-              <p style={{ marginTop: 0, marginBottom: "0.5rem" }}>
-                Diff preview ({replayStepIndex + 1}/{replaySteps.length})
-              </p>
-              <pre
+              <p style={{ marginTop: 0, marginBottom: "0.6rem", fontWeight: 700 }}>File Tree</p>
+              <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                {replayFiles.map((file) => (
+                  <li key={file.filePath} style={{ marginBottom: "0.35rem" }}>
+                    <button
+                      onClick={() => setSelectedReplayFilePath(file.filePath)}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "0.4rem 0.5rem",
+                        border: "1px solid #d1d5db",
+                        borderRadius: 6,
+                        background: selectedReplayFile?.filePath === file.filePath ? "#dbeafe" : "#fff",
+                        cursor: "pointer",
+                        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                        fontSize: 12,
+                      }}
+                    >
+                      {file.filePath}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: "0.75rem", background: "#f8fafc" }}>
+              <div style={{ border: "1px solid #1f2937", borderRadius: 8, background: "#0f172a", padding: "0.75rem", marginBottom: "0.8rem" }}>
+                <p style={{ color: "#cbd5e1", marginTop: 0, marginBottom: "0.5rem" }}>
+                  {replayStudent.name} editing <code>{selectedReplayFile?.filePath ?? "-"}</code>
+                </p>
+                <pre
+                  style={{
+                    margin: 0,
+                    color: "#e2e8f0",
+                    minHeight: 260,
+                    whiteSpace: "pre-wrap",
+                    fontSize: 13,
+                    lineHeight: 1.45,
+                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                  }}
+                >
+                  {replayDisplayContent || "// No replay data for this file yet."}
+                </pre>
+              </div>
+
+              <div style={{ marginBottom: "0.7rem" }}>
+                <p style={{ marginTop: 0, marginBottom: "0.35rem", color: "#4b5563", fontSize: 12 }}>
+                  Timeline ({replayStepIndex + 1}/{Math.max(replaySteps.length, 1)})
+                </p>
+                <div style={{ display: "flex", height: 18, borderRadius: 999, overflow: "hidden", border: "1px solid #d1d5db" }}>
+                  {replaySteps.map((step, idx) => {
+                    const width = replayTotalDuration > 0 ? (step.durationSeconds / replayTotalDuration) * 100 : 0;
+                    const isActive = idx === replayStepIndex;
+                    return (
+                      <button
+                        key={step.id}
+                        onClick={() => handleReplayStepSelect(idx)}
+                        title={`${step.title} (${step.durationSeconds}s)`}
+                        style={{
+                          width: `${width}%`,
+                          border: "none",
+                          borderRight: "1px solid #d1d5db",
+                          background: isActive ? "#2563eb" : "#93c5fd",
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <button
+                  onClick={handleReplayStepBackward}
+                  disabled={replayStepIndex === 0}
+                  aria-label="Previous step"
+                  title="Previous step"
+                  style={{ width: 36, height: 36, display: "grid", placeItems: "center" }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <rect x="2" y="3" width="2" height="10" fill="currentColor" />
+                    <path d="M12 3L5 8L12 13V3Z" fill="currentColor" />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleReplayPlayPause}
+                  disabled={replaySteps.length === 0}
+                  aria-label={isReplayPlaying ? "Pause" : "Play"}
+                  title={isReplayPlaying ? "Pause" : "Play"}
+                  style={{ width: 44, height: 44, borderRadius: 999, display: "grid", placeItems: "center" }}
+                >
+                  {isReplayPlaying ? (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                      <rect x="3" y="2" width="3" height="12" fill="currentColor" />
+                      <rect x="10" y="2" width="3" height="12" fill="currentColor" />
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                      <path d="M4 2L13 8L4 14V2Z" fill="currentColor" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={handleReplayStepForward}
+                  disabled={replayStepIndex >= replaySteps.length - 1}
+                  aria-label="Next step"
+                  title="Next step"
+                  style={{ width: 36, height: 36, display: "grid", placeItems: "center" }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <rect x="12" y="3" width="2" height="10" fill="currentColor" />
+                    <path d="M4 3L11 8L4 13V3Z" fill="currentColor" />
+                  </svg>
+                </button>
+                <span style={{ fontSize: 12, color: "#4b5563" }}>
+                  {replayStep?.title ?? "No step selected"}
+                </span>
+              </div>
+            </section>
+
+            <section
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 8,
+                padding: "0.75rem",
+                background: "#ffffff",
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 430,
+              }}
+            >
+              <p style={{ marginTop: 0, marginBottom: "0.6rem", fontWeight: 700 }}>AI Insights</p>
+              <div
                 style={{
-                  margin: 0,
-                  whiteSpace: "pre-wrap",
-                  fontSize: 12,
-                  lineHeight: 1.35,
-                  maxHeight: 320,
+                  flex: 1,
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 6,
+                  padding: "0.5rem",
                   overflowY: "auto",
-                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                  background: "#f9fafb",
+                  marginBottom: "0.6rem",
                 }}
               >
-                {replayStep?.diff ?? "No diff data found."}
-              </pre>
+                {insightMessages.map((message, index) => (
+                  <p key={`${message}-${index}`} style={{ margin: "0 0 0.5rem", fontSize: 13, lineHeight: 1.35 }}>
+                    {message}
+                  </p>
+                ))}
+              </div>
+              <form onSubmit={handleInsightSubmit} style={{ display: "flex", gap: "0.4rem" }}>
+                <input
+                  value={insightInput}
+                  onChange={(e) => setInsightInput(e.target.value)}
+                  placeholder="Ask AI about this student's progress..."
+                  style={{ flex: 1, padding: "0.5rem" }}
+                />
+                <button type="submit" style={{ padding: "0.5rem 0.7rem" }}>
+                  Send
+                </button>
+              </form>
             </section>
           </div>
         </section>
