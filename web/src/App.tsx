@@ -1,33 +1,46 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "./api/supabase";
 import type { Session } from "@supabase/supabase-js";
+import "./app.css";
+import {
+  BrowserRouter,
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useParams,
+} from "react-router-dom";
 
 import averyStep1Diff from "./mock-diffs/avery-step1.diff?raw";
 import averyStep2Diff from "./mock-diffs/avery-step2.diff?raw";
+import averyStep3Diff from "./mock-diffs/avery-step3.diff?raw";
+import averyStep4Diff from "./mock-diffs/avery-step4.diff?raw";
 import noahStep1Diff from "./mock-diffs/noah-step1.diff?raw";
 import noahStep2Diff from "./mock-diffs/noah-step2.diff?raw";
+import noahStep3Diff from "./mock-diffs/noah-step3.diff?raw";
+import noahStep4Diff from "./mock-diffs/noah-step4.diff?raw";
 import miaStep1Diff from "./mock-diffs/mia-step1.diff?raw";
 import miaStep2Diff from "./mock-diffs/mia-step2.diff?raw";
+import miaStep3Diff from "./mock-diffs/mia-step3.diff?raw";
+import miaStep4Diff from "./mock-diffs/mia-step4.diff?raw";
+import liamStep1Diff from "./mock-diffs/liam-step1.diff?raw";
+import liamStep2Diff from "./mock-diffs/liam-step2.diff?raw";
+import liamStep3Diff from "./mock-diffs/liam-step3.diff?raw";
+import liamStep4Diff from "./mock-diffs/liam-step4.diff?raw";
+import zoeStep1Diff from "./mock-diffs/zoe-step1.diff?raw";
+import zoeStep2Diff from "./mock-diffs/zoe-step2.diff?raw";
+import zoeStep3Diff from "./mock-diffs/zoe-step3.diff?raw";
+import zoeStep4Diff from "./mock-diffs/zoe-step4.diff?raw";
+import owenStep1Diff from "./mock-diffs/owen-step1.diff?raw";
+import owenStep2Diff from "./mock-diffs/owen-step2.diff?raw";
+import owenStep3Diff from "./mock-diffs/owen-step3.diff?raw";
+import owenStep4Diff from "./mock-diffs/owen-step4.diff?raw";
 
-type DashboardTab = "student" | "overall" | "progress";
-
-type StudentRecord = {
+type Student = {
   id: string;
   name: string;
-  stats: Array<{ label: string; value: string }>;
-  aiOverview: string[];
-};
-
-type PieSlice = {
-  label: string;
-  value: number;
-  color: string;
-};
-
-type TimeBar = {
-  label: string;
-  hours: number;
-  color: string;
+  email: string;
 };
 
 type ReplayStep = {
@@ -45,143 +58,50 @@ type ReplayFile = {
   steps: ReplayStep[];
 };
 
-const students: StudentRecord[] = [
-  {
-    id: "s-001",
-    name: "Avery Johnson",
-    stats: [
-      { label: "Assignments Completed", value: "18/22" },
-      { label: "Average Score", value: "81%" },
-      { label: "Time on Task (weekly)", value: "4.2 hrs" },
-      { label: "Late Submissions", value: "2" },
-    ],
-    aiOverview: [
-      "Avery shows solid completion habits but struggles most with multi-step debugging tasks.",
-      "Recent submissions suggest confusion around loop boundaries and translating rubric feedback into revised code.",
-    ],
-  },
-  {
-    id: "s-002",
-    name: "Noah Patel",
-    stats: [
-      { label: "Assignments Completed", value: "20/22" },
-      { label: "Average Score", value: "88%" },
-      { label: "Time on Task (weekly)", value: "3.7 hrs" },
-      { label: "Late Submissions", value: "0" },
-    ],
-    aiOverview: [
-      "Noah performs consistently well but misses points on written reasoning for algorithm choices.",
-      "Growth opportunity is documenting edge cases before implementation, especially in recursive problems.",
-    ],
-  },
-  {
-    id: "s-003",
-    name: "Mia Chen",
-    stats: [
-      { label: "Assignments Completed", value: "16/22" },
-      { label: "Average Score", value: "73%" },
-      { label: "Time on Task (weekly)", value: "5.0 hrs" },
-      { label: "Late Submissions", value: "3" },
-    ],
-    aiOverview: [
-      "Mia demonstrates effort and time-on-task but struggles with function decomposition and test planning.",
-      "Most frequent issues come from starting implementation before outlining data flow and helper functions.",
-    ],
-  },
-];
-
-const overallStats = [
-  { label: "Class Average Score", value: "76%" },
-  { label: "Average Completion Rate", value: "84%" },
-  { label: "Average Weekly Time", value: "3.8 hrs" },
-  { label: "Students Needing Support", value: "7/42" },
-];
-
-const studentFileTime: Record<string, PieSlice[]> = {
-  "s-001": [
-    { label: "main.tsx", value: 2.1, color: "#0ea5e9" },
-    { label: "algorithms.ts", value: 1.7, color: "#14b8a6" },
-    { label: "tests.spec.ts", value: 0.9, color: "#f59e0b" },
-  ],
-  "s-002": [
-    { label: "main.tsx", value: 1.8, color: "#0ea5e9" },
-    { label: "tree-utils.ts", value: 1.2, color: "#14b8a6" },
-    { label: "reasoning.md", value: 0.7, color: "#f59e0b" },
-  ],
-  "s-003": [
-    { label: "main.tsx", value: 2.4, color: "#0ea5e9" },
-    { label: "helpers.ts", value: 1.1, color: "#14b8a6" },
-    { label: "debug-notes.md", value: 1.5, color: "#f59e0b" },
-  ],
+type AssignmentStudentData = {
+  stats: Array<{ label: string; value: string }>;
+  aiOverview: string[];
 };
 
-const studentFunctionTime: Record<string, PieSlice[]> = {
-  "s-001": [
-    { label: "buildSchedule()", value: 1.4, color: "#8b5cf6" },
-    { label: "scoreSubmission()", value: 1.1, color: "#ec4899" },
-    { label: "parseEvents()", value: 0.8, color: "#22c55e" },
-  ],
-  "s-002": [
-    { label: "dfsSearch()", value: 1.0, color: "#8b5cf6" },
-    { label: "scoreSubmission()", value: 0.9, color: "#ec4899" },
-    { label: "compareNodes()", value: 0.6, color: "#22c55e" },
-  ],
-  "s-003": [
-    { label: "renderHints()", value: 1.2, color: "#8b5cf6" },
-    { label: "validateInput()", value: 1.4, color: "#ec4899" },
-    { label: "retryFailed()", value: 0.9, color: "#22c55e" },
-  ],
+type Assignment = {
+  id: string;
+  title: string;
+  due: string;
+  symbols: string[];
+  classStats: Array<{ label: string; value: string }>;
+  students: Record<string, AssignmentStudentData>;
+  heatmap: Record<string, Record<string, number>>;
+  narratives: Record<string, Record<string, string>>;
+  replay: Record<string, ReplayFile[]>;
 };
 
-const studentTimeBars: Record<string, TimeBar[]> = {
-  "s-001": [
-    { label: "Debugging", hours: 1.8, color: "#0ea5e9" },
-    { label: "Implementation", hours: 1.5, color: "#14b8a6" },
-    { label: "Reading Prompts", hours: 0.9, color: "#f59e0b" },
-  ],
-  "s-002": [
-    { label: "Implementation", hours: 1.6, color: "#14b8a6" },
-    { label: "Refactoring", hours: 1.1, color: "#0ea5e9" },
-    { label: "Writing Explanations", hours: 0.7, color: "#f59e0b" },
-  ],
-  "s-003": [
-    { label: "Debugging", hours: 2.1, color: "#0ea5e9" },
-    { label: "Implementation", hours: 1.7, color: "#14b8a6" },
-    { label: "Planning", hours: 1.0, color: "#f59e0b" },
-  ],
+type Course = {
+  id: string;
+  title: string;
+  role: string;
+  term: string;
+  assignments: Assignment[];
 };
 
-const classFileTime: PieSlice[] = [
-  { label: "main.tsx", value: 24, color: "#0ea5e9" },
-  { label: "utils.ts", value: 18, color: "#14b8a6" },
-  { label: "tests.spec.ts", value: 13, color: "#f59e0b" },
-  { label: "notes.md", value: 8, color: "#6366f1" },
+const students: Student[] = [
+  { id: "s-001", name: "Avery Johnson", email: "avery.johnson@school.edu" },
+  { id: "s-002", name: "Noah Patel", email: "noah.patel@school.edu" },
+  { id: "s-003", name: "Mia Chen", email: "mia.chen@school.edu" },
+  { id: "s-004", name: "Liam Garcia", email: "liam.garcia@school.edu" },
+  { id: "s-005", name: "Zoe Kim", email: "zoe.kim@school.edu" },
+  { id: "s-006", name: "Owen Brooks", email: "owen.brooks@school.edu" },
 ];
 
-const classFunctionTime: PieSlice[] = [
-  { label: "scoreSubmission()", value: 17, color: "#8b5cf6" },
-  { label: "validateInput()", value: 15, color: "#ec4899" },
-  { label: "buildSchedule()", value: 12, color: "#22c55e" },
-  { label: "renderHints()", value: 9, color: "#06b6d4" },
-];
-
-const classTimeBars: TimeBar[] = [
-  { label: "Debugging", hours: 19, color: "#0ea5e9" },
-  { label: "Implementation", hours: 27, color: "#14b8a6" },
-  { label: "Planning", hours: 12, color: "#f59e0b" },
-  { label: "Writing Explanations", hours: 9, color: "#6366f1" },
-];
-
-const replayByStudent: Record<string, ReplayFile[]> = {
+const replayTemplates: Record<string, ReplayFile[]> = {
   "s-001": [
     {
       filePath: "src/loops.ts",
       baseInsight:
-        "Avery spent most time fixing loop control mistakes, especially around array bounds and readability.",
+        "Avery improved loop correctness quickly after identifying an off-by-one boundary issue.",
       steps: [
         {
           id: "avery-1",
-          title: "Fix off-by-one in loop bounds",
+          title: "Fix loop boundary",
           diff: averyStep1Diff,
           before:
             "export function countPassed(scores: number[]) {\n  let passed = 0;\n  for (let i = 0; i <= scores.length; i++) {\n    if (scores[i] >= 70) passed += 1;\n  }\n  return passed;\n}\n",
@@ -199,21 +119,25 @@ const replayByStudent: Record<string, ReplayFile[]> = {
             "export function countPassed(scores: number[]) {\n  let passed = 0;\n  for (let i = 0; i < scores.length; i++) {\n    const score = scores[i];\n    if (score >= 70) passed += 1;\n  }\n\n  return passed;\n}\n",
           durationSeconds: 4,
         },
-      ],
-    },
-    {
-      filePath: "notes/reflection.md",
-      baseInsight:
-        "Avery's reflection notes show stronger self-correction after seeing failing tests.",
-      steps: [
         {
-          id: "avery-notes-1",
-          title: "Document loop bug takeaway",
-          diff: "diff --git a/notes/reflection.md b/notes/reflection.md\n@@ -1,2 +1,3 @@\n-I need to recheck loops.\n+I need to recheck loops for < vs <= and test edge cases first.\n+I will write one tiny test before editing next time.\n",
-          before: "# Reflection\nI need to recheck loops.\n",
+          id: "avery-3",
+          title: "Extract passing score constant",
+          diff: averyStep3Diff,
+          before:
+            "export function countPassed(scores: number[]) {\n  let passed = 0;\n  for (let i = 0; i < scores.length; i++) {\n    const score = scores[i];\n    if (score >= 70) passed += 1;\n  }\n\n  return passed;\n}\n",
           after:
-            "# Reflection\nI need to recheck loops for < vs <= and test edge cases first.\nI will write one tiny test before editing next time.\n",
-          durationSeconds: 3,
+            "export function countPassed(scores: number[]) {\n  let passed = 0;\n  const PASSING_SCORE = 70;\n\n  for (let i = 0; i < scores.length; i++) {\n    const score = scores[i];\n    if (score >= PASSING_SCORE) passed += 1;\n  }\n\n  return passed;\n}\n",
+          durationSeconds: 5,
+        },
+        {
+          id: "avery-4",
+          title: "Use for-of and add empty guard",
+          diff: averyStep4Diff,
+          before:
+            "export function countPassed(scores: number[]) {\n  let passed = 0;\n  const PASSING_SCORE = 70;\n\n  for (let i = 0; i < scores.length; i++) {\n    const score = scores[i];\n    if (score >= PASSING_SCORE) passed += 1;\n  }\n\n  return passed;\n}\n",
+          after:
+            "export function countPassed(scores: number[]) {\n  let passed = 0;\n  const PASSING_SCORE = 70;\n\n  for (const score of scores) {\n    if (score >= PASSING_SCORE) passed += 1;\n  }\n\n  return scores.length === 0 ? 0 : passed;\n}\n",
+          durationSeconds: 4,
         },
       ],
     },
@@ -222,11 +146,11 @@ const replayByStudent: Record<string, ReplayFile[]> = {
     {
       filePath: "src/tree.ts",
       baseInsight:
-        "Noah's code is structurally correct; most edits are about clarifying algorithm intent and communication.",
+        "Noah spent less time fixing logic and more time clarifying algorithm communication.",
       steps: [
         {
           id: "noah-1",
-          title: "Add traversal intent comment",
+          title: "Add traversal explanation",
           diff: noahStep1Diff,
           before:
             "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n  return [...left, node.value, ...right];\n}\n",
@@ -236,29 +160,33 @@ const replayByStudent: Record<string, ReplayFile[]> = {
         },
         {
           id: "noah-2",
-          title: "Refine comment terminology",
+          title: "Refine terminology",
           diff: noahStep2Diff,
           before:
             "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n\n  // keep root in between left and right traversal\n  return [...left, node.value, ...right];\n}\n",
           after:
             "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n\n  // in-order traversal: left, root, right\n  return [...left, node.value, ...right];\n}\n",
+          durationSeconds: 3,
+        },
+        {
+          id: "noah-3",
+          title: "Clarify traversal wording",
+          diff: noahStep3Diff,
+          before:
+            "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n\n  // in-order traversal: left, root, right\n  return [...left, node.value, ...right];\n}\n",
+          after:
+            "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n\n  // in-order traversal: left subtree, root, right subtree\n  return [...left, node.value, ...right];\n}\n",
           durationSeconds: 2,
         },
-      ],
-    },
-    {
-      filePath: "notes/explanation.md",
-      baseInsight:
-        "Noah often backfills explanations after coding, which is good but can happen earlier.",
-      steps: [
         {
-          id: "noah-notes-1",
-          title: "Clarify traversal ordering",
-          diff: "diff --git a/notes/explanation.md b/notes/explanation.md\n@@ -1,2 +1,3 @@\n-In-order means left and right around root.\n+In-order means left subtree, then root, then right subtree.\n+This matches the array spread order in my return statement.\n",
-          before: "# Traversal Notes\nIn-order means left and right around root.\n",
+          id: "noah-4",
+          title: "Add spacing for readability",
+          diff: noahStep4Diff,
+          before:
+            "export function dfs(node: Node | null) {\n  if (!node) return [];\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n\n  // in-order traversal: left subtree, root, right subtree\n  return [...left, node.value, ...right];\n}\n",
           after:
-            "# Traversal Notes\nIn-order means left subtree, then root, then right subtree.\nThis matches the array spread order in my return statement.\n",
-          durationSeconds: 3,
+            "export function dfs(node: Node | null) {\n  if (!node) return [];\n\n  const left = dfs(node.left);\n  const right = dfs(node.right);\n\n  // in-order traversal: left subtree, root, right subtree\n  return [...left, node.value, ...right];\n}\n",
+          durationSeconds: 2,
         },
       ],
     },
@@ -267,11 +195,11 @@ const replayByStudent: Record<string, ReplayFile[]> = {
     {
       filePath: "src/input.ts",
       baseInsight:
-        "Mia improved input handling steadily; most time was spent tightening validation edge cases.",
+        "Mia improved robustness by tightening validation and normalizing edge-case whitespace.",
       steps: [
         {
           id: "mia-1",
-          title: "Trim input before validation",
+          title: "Trim input first",
           diff: miaStep1Diff,
           before:
             "export function isValidName(name: string) {\n  return name.length > 0;\n}\n\nexport function formatName(name: string) {\n  return name.trim();\n}\n",
@@ -281,7 +209,7 @@ const replayByStudent: Record<string, ReplayFile[]> = {
         },
         {
           id: "mia-2",
-          title: "Strengthen validation and normalize spaces",
+          title: "Strengthen validation",
           diff: miaStep2Diff,
           before:
             "export function isValidName(name: string) {\n  const trimmed = name.trim();\n  return trimmed.length > 0;\n}\n\nexport function formatName(name: string) {\n  return name.trim();\n}\n",
@@ -289,40 +217,476 @@ const replayByStudent: Record<string, ReplayFile[]> = {
             "export function isValidName(name: string) {\n  const trimmed = name.trim();\n  return trimmed.length >= 2;\n}\n\nexport function formatName(name: string) {\n  return name.trim().replace(/\\s+/g, \" \");\n}\n",
           durationSeconds: 5,
         },
+        {
+          id: "mia-3",
+          title: "Add upper bound to validation",
+          diff: miaStep3Diff,
+          before:
+            "export function isValidName(name: string) {\n  const trimmed = name.trim();\n  return trimmed.length >= 2;\n}\n\nexport function formatName(name: string) {\n  return name.trim().replace(/\\s+/g, \" \");\n}\n",
+          after:
+            "export function isValidName(name: string) {\n  const trimmed = name.trim();\n  return trimmed.length >= 2 && trimmed.length <= 40;\n}\n\nexport function formatName(name: string) {\n  return name.trim().replace(/\\s+/g, \" \");\n}\n",
+          durationSeconds: 4,
+        },
+        {
+          id: "mia-4",
+          title: "Extract trimmed variable in formatter",
+          diff: miaStep4Diff,
+          before:
+            "export function isValidName(name: string) {\n  const trimmed = name.trim();\n  return trimmed.length >= 2 && trimmed.length <= 40;\n}\n\nexport function formatName(name: string) {\n  return name.trim().replace(/\\s+/g, \" \");\n}\n",
+          after:
+            "export function isValidName(name: string) {\n  const trimmed = name.trim();\n  return trimmed.length >= 2 && trimmed.length <= 40;\n}\n\nexport function formatName(name: string) {\n  const trimmed = name.trim().replace(/\\s+/g, \" \");\n  return trimmed;\n}\n",
+          durationSeconds: 4,
+        },
       ],
     },
+  ],
+  "s-004": [
     {
-      filePath: "notes/validation-plan.md",
+      filePath: "src/copy_constructor.cpp",
       baseInsight:
-        "Mia's written plan became more concrete once she listed specific invalid-name examples.",
+        "Liam struggled most with copy-constructor semantics and ownership safety.",
       steps: [
         {
-          id: "mia-notes-1",
-          title: "Add concrete invalid cases",
-          diff: "diff --git a/notes/validation-plan.md b/notes/validation-plan.md\n@@ -1,2 +1,3 @@\n-Need to test names.\n+Need to test names: empty, single-char, and extra spaces.\n+Also ensure output collapses repeated spaces.\n",
-          before: "# Validation Plan\nNeed to test names.\n",
+          id: "liam-1",
+          title: "Replace default copy constructor",
+          diff: liamStep1Diff,
+          before: "Widget::Widget(const Widget& other) = default;\n",
           after:
-            "# Validation Plan\nNeed to test names: empty, single-char, and extra spaces.\nAlso ensure output collapses repeated spaces.\n",
+            "Widget::Widget(const Widget& other) {\n  size = other.size;\n  data = nullptr;\n}\n",
+          durationSeconds: 4,
+        },
+        {
+          id: "liam-2",
+          title: "Allocate and copy elements",
+          diff: liamStep2Diff,
+          before:
+            "Widget::Widget(const Widget& other) {\n  size = other.size;\n  data = nullptr;\n}\n",
+          after:
+            "Widget::Widget(const Widget& other) {\n  size = other.size;\n  data = new int[size];\n  for (int i = 0; i < size; i++) {\n    data[i] = other.data[i];\n  }\n}\n",
+          durationSeconds: 6,
+        },
+        {
+          id: "liam-3",
+          title: "Handle zero-size safely",
+          diff: liamStep3Diff,
+          before:
+            "Widget::Widget(const Widget& other) {\n  size = other.size;\n  data = new int[size];\n  for (int i = 0; i < size; i++) {\n    data[i] = other.data[i];\n  }\n}\n",
+          after:
+            "Widget::Widget(const Widget& other) {\n  size = other.size;\n  if (size == 0) {\n    data = nullptr;\n  } else {\n    data = new int[size];\n    for (int i = 0; i < size; i++) data[i] = other.data[i];\n  }\n}\n",
+          durationSeconds: 6,
+        },
+        {
+          id: "liam-4",
+          title: "Improve constructor readability",
+          diff: liamStep4Diff,
+          before:
+            "Widget::Widget(const Widget& other) {\n  size = other.size;\n  if (size == 0) {\n    data = nullptr;\n  } else {\n    data = new int[size];\n    for (int i = 0; i < size; i++) data[i] = other.data[i];\n  }\n}\n",
+          after:
+            "Widget::Widget(const Widget& other) {\n  size = other.size;\n\n  if (size == 0) {\n    data = nullptr;\n  } else {\n    data = new int[size];\n    for (int i = 0; i < size; i++) data[i] = other.data[i];\n  }\n}\n",
           durationSeconds: 3,
+        },
+      ],
+    },
+  ],
+  "s-005": [
+    {
+      filePath: "src/schedule.ts",
+      baseInsight:
+        "Zoe iterated quickly on schedule filtering and ordering, with most effort spent on sorting behavior.",
+      steps: [
+        {
+          id: "zoe-1",
+          title: "Add spacing and setup",
+          diff: zoeStep1Diff,
+          before:
+            "export function buildSchedule(events: Event[]) {\n  const out: Event[] = [];\n  for (const e of events) {\n    out.push(e);\n  }\n  return out;\n}\n",
+          after:
+            "export function buildSchedule(events: Event[]) {\n  const out: Event[] = [];\n\n  for (const e of events) {\n    out.push(e);\n  }\n  return out;\n}\n",
+          durationSeconds: 2,
+        },
+        {
+          id: "zoe-2",
+          title: "Filter disabled events",
+          diff: zoeStep2Diff,
+          before:
+            "export function buildSchedule(events: Event[]) {\n  const out: Event[] = [];\n\n  for (const e of events) {\n    out.push(e);\n  }\n  return out;\n}\n",
+          after:
+            "export function buildSchedule(events: Event[]) {\n  const out: Event[] = [];\n\n  for (const e of events) {\n    if (e.enabled) out.push(e);\n  }\n\n  return out;\n}\n",
+          durationSeconds: 5,
+        },
+        {
+          id: "zoe-3",
+          title: "Sort by start time",
+          diff: zoeStep3Diff,
+          before:
+            "export function buildSchedule(events: Event[]) {\n  const out: Event[] = [];\n\n  for (const e of events) {\n    if (e.enabled) out.push(e);\n  }\n\n  return out;\n}\n",
+          after:
+            "export function buildSchedule(events: Event[]) {\n  const out: Event[] = [];\n\n  for (const e of events) {\n    if (e.enabled) out.push(e);\n  }\n  out.sort((a, b) => a.start - b.start);\n  return out;\n}\n",
+          durationSeconds: 6,
+        },
+        {
+          id: "zoe-4",
+          title: "Polish formatting",
+          diff: zoeStep4Diff,
+          before:
+            "export function buildSchedule(events: Event[]) {\n  const out: Event[] = [];\n\n  for (const e of events) {\n    if (e.enabled) out.push(e);\n  }\n  out.sort((a, b) => a.start - b.start);\n  return out;\n}\n",
+          after:
+            "export function buildSchedule(events: Event[]) {\n  const out: Event[] = [];\n\n  for (const e of events) {\n    if (e.enabled) out.push(e);\n  }\n\n  out.sort((a, b) => a.start - b.start);\n  return out;\n}\n",
+          durationSeconds: 2,
+        },
+      ],
+    },
+  ],
+  "s-006": [
+    {
+      filePath: "src/hints.ts",
+      baseInsight:
+        "Owen showed steady progress in output formatting, especially around list rendering and clipping.",
+      steps: [
+        {
+          id: "owen-1",
+          title: "Handle empty hints",
+          diff: owenStep1Diff,
+          before:
+            "export function renderHints(hints: string[]) {\n  return hints.join(\"\\n\");\n}\n",
+          after:
+            "export function renderHints(hints: string[]) {\n  if (hints.length === 0) return \"\";\n  return hints.join(\"\\n\");\n}\n",
+          durationSeconds: 3,
+        },
+        {
+          id: "owen-2",
+          title: "Filter blank hints",
+          diff: owenStep2Diff,
+          before:
+            "export function renderHints(hints: string[]) {\n  if (hints.length === 0) return \"\";\n  return hints.join(\"\\n\");\n}\n",
+          after:
+            "export function renderHints(hints: string[]) {\n  if (hints.length === 0) return \"\";\n  const cleaned = hints.filter(Boolean);\n  return cleaned.join(\"\\n\");\n}\n",
+          durationSeconds: 4,
+        },
+        {
+          id: "owen-3",
+          title: "Add numbering",
+          diff: owenStep3Diff,
+          before:
+            "export function renderHints(hints: string[]) {\n  if (hints.length === 0) return \"\";\n  const cleaned = hints.filter(Boolean);\n  return cleaned.join(\"\\n\");\n}\n",
+          after:
+            "export function renderHints(hints: string[]) {\n  if (hints.length === 0) return \"\";\n  const cleaned = hints.filter(Boolean);\n  const numbered = cleaned.map((hint, idx) => `${idx + 1}. ${hint}`);\n  return numbered.join(\"\\n\");\n}\n",
+          durationSeconds: 5,
+        },
+        {
+          id: "owen-4",
+          title: "Limit preview length",
+          diff: owenStep4Diff,
+          before:
+            "export function renderHints(hints: string[]) {\n  if (hints.length === 0) return \"\";\n  const cleaned = hints.filter(Boolean);\n  const numbered = cleaned.map((hint, idx) => `${idx + 1}. ${hint}`);\n  return numbered.join(\"\\n\");\n}\n",
+          after:
+            "export function renderHints(hints: string[]) {\n  if (hints.length === 0) return \"\";\n  const cleaned = hints.filter(Boolean);\n  const numbered = cleaned.map((hint, idx) => `${idx + 1}. ${hint}`);\n  const preview = numbered.slice(0, 20);\n  return preview.join(\"\\n\");\n}\n",
+          durationSeconds: 5,
         },
       ],
     },
   ],
 };
 
-function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
-  const radians = (angle * Math.PI) / 180;
-  return {
-    x: cx + r * Math.cos(radians),
-    y: cy + r * Math.sin(radians),
-  };
-}
+const assignments: Assignment[] = [
+  {
+    id: "a1-debugging-foundations",
+    title: "Debugging Foundations",
+    due: "Feb 28, 2026",
+    symbols: ["countPassed", "parseEvents", "scoreSubmission", "copy constructor"],
+    classStats: [
+      { label: "Class Average Score", value: "76%" },
+      { label: "Average Completion Rate", value: "84%" },
+      { label: "Avg Time on Assignment", value: "3.8 hrs" },
+      { label: "Students Needing Support", value: "7/42" },
+    ],
+    students: {
+      "s-001": {
+        stats: [
+          { label: "Assignment Score", value: "81%" },
+          { label: "Time on Assignment", value: "4.2 hrs" },
+          { label: "Compile Errors Resolved", value: "9" },
+          { label: "Late Submissions", value: "0" },
+        ],
+        aiOverview: [
+          "Avery improved quickly after identifying loop boundary issues.",
+          "Main struggle area was maintaining confidence when first fix did not pass all tests.",
+        ],
+      },
+      "s-002": {
+        stats: [
+          { label: "Assignment Score", value: "88%" },
+          { label: "Time on Assignment", value: "3.6 hrs" },
+          { label: "Compile Errors Resolved", value: "4" },
+          { label: "Late Submissions", value: "0" },
+        ],
+        aiOverview: [
+          "Noah was consistent and mostly focused on explanatory clarity.",
+          "Could improve by planning rationale comments before implementation.",
+        ],
+      },
+      "s-003": {
+        stats: [
+          { label: "Assignment Score", value: "73%" },
+          { label: "Time on Assignment", value: "5.0 hrs" },
+          { label: "Compile Errors Resolved", value: "11" },
+          { label: "Late Submissions", value: "1" },
+        ],
+        aiOverview: [
+          "Mia's strongest gains were around input-validation edge cases.",
+          "Still needs support in decomposing tasks before coding.",
+        ],
+      },
+      "s-004": {
+        stats: [
+          { label: "Assignment Score", value: "67%" },
+          { label: "Time on Assignment", value: "5.4 hrs" },
+          { label: "Compile Errors Resolved", value: "15" },
+          { label: "Late Submissions", value: "1" },
+        ],
+        aiOverview: [
+          "Liam's major blocker was copy semantics and memory ownership.",
+          "Needs targeted review on constructor/operator rules and object lifecycle.",
+        ],
+      },
+      "s-005": {
+        stats: [
+          { label: "Assignment Score", value: "86%" },
+          { label: "Time on Assignment", value: "3.9 hrs" },
+          { label: "Compile Errors Resolved", value: "5" },
+          { label: "Late Submissions", value: "0" },
+        ],
+        aiOverview: [
+          "Zoe moved quickly from basic filtering to sorted output behavior.",
+          "Main challenge was preserving stable ordering while adding constraints.",
+        ],
+      },
+      "s-006": {
+        stats: [
+          { label: "Assignment Score", value: "78%" },
+          { label: "Time on Assignment", value: "4.1 hrs" },
+          { label: "Compile Errors Resolved", value: "8" },
+          { label: "Late Submissions", value: "0" },
+        ],
+        aiOverview: [
+          "Owen improved output formatting incrementally with smaller safe edits.",
+          "Still spends extra time on deciding when and where to clip output.",
+        ],
+      },
+    },
+    heatmap: {
+      "s-001": { countPassed: 48, parseEvents: 30, scoreSubmission: 35, "copy constructor": 65 },
+      "s-002": { countPassed: 25, parseEvents: 20, scoreSubmission: 31, "copy constructor": 58 },
+      "s-003": { countPassed: 57, parseEvents: 61, scoreSubmission: 55, "copy constructor": 72 },
+      "s-004": { countPassed: 69, parseEvents: 67, scoreSubmission: 63, "copy constructor": 91 },
+      "s-005": { countPassed: 29, parseEvents: 33, scoreSubmission: 37, "copy constructor": 52 },
+      "s-006": { countPassed: 54, parseEvents: 47, scoreSubmission: 44, "copy constructor": 69 },
+    },
+    narratives: {
+      "s-001": {
+        countPassed: "Avery initially used <= in loop termination and fixed it after failing edge tests.",
+        parseEvents: "Minimal struggle; resolved quickly after adding a null guard.",
+        scoreSubmission: "Needed one retry to align rubric scoring branch conditions.",
+        "copy constructor": "Some confusion around why shallow copy breaks mutable arrays.",
+      },
+      "s-002": {
+        countPassed: "Noah implemented correctly with minor naming cleanup.",
+        parseEvents: "Smooth completion with no major issue patterns.",
+        scoreSubmission: "Small adjustment to match expected boundary scoring.",
+        "copy constructor": "Understood conceptually but lacked confidence in ownership explanation.",
+      },
+      "s-003": {
+        countPassed: "Repeated boundary errors before stabilizing with focused tests.",
+        parseEvents: "Needed support translating prompt language into control flow.",
+        scoreSubmission: "Several branch condition reversals before final correction.",
+        "copy constructor": "Struggled with deep copy mechanics and pointer lifecycle assumptions.",
+      },
+      "s-004": {
+        countPassed: "Slow progress due to uncertainty in for-loop bounds.",
+        parseEvents: "Multiple retries around symbol parsing and default cases.",
+        scoreSubmission: "Difficulty mapping rubric states to branches.",
+        "copy constructor": "Primary blocker: attempted default copy and caused aliasing bugs.",
+      },
+      "s-005": {
+        countPassed: "Low struggle after quickly validating boundary tests.",
+        parseEvents: "Minor friction around preserving input order while filtering.",
+        scoreSubmission: "Needed one pass to align edge threshold handling.",
+        "copy constructor": "Understood deep copy concept but needed syntax reminders.",
+      },
+      "s-006": {
+        countPassed: "Moderate struggle with early-return placement.",
+        parseEvents: "Stabilized after adding small checkpoint logs.",
+        scoreSubmission: "Occasional branch order confusion resolved with test cases.",
+        "copy constructor": "Improved after mapping object ownership explicitly.",
+      },
+    },
+    replay: replayTemplates,
+  },
+  {
+    id: "a2-function-design",
+    title: "Function Design and Testing",
+    due: "Mar 10, 2026",
+    symbols: ["validateInput", "buildSchedule", "renderHints"],
+    classStats: [
+      { label: "Class Average Score", value: "79%" },
+      { label: "Average Completion Rate", value: "87%" },
+      { label: "Avg Time on Assignment", value: "3.2 hrs" },
+      { label: "Students Needing Support", value: "5/42" },
+    ],
+    students: {
+      "s-001": {
+        stats: [
+          { label: "Assignment Score", value: "84%" },
+          { label: "Time on Assignment", value: "3.4 hrs" },
+          { label: "Compile Errors Resolved", value: "6" },
+          { label: "Late Submissions", value: "0" },
+        ],
+        aiOverview: [
+          "Strong on structure; should include more boundary test notes.",
+          "Had mild difficulty with validating nested optional fields.",
+        ],
+      },
+      "s-002": {
+        stats: [
+          { label: "Assignment Score", value: "90%" },
+          { label: "Time on Assignment", value: "2.8 hrs" },
+          { label: "Compile Errors Resolved", value: "2" },
+          { label: "Late Submissions", value: "0" },
+        ],
+        aiOverview: [
+          "Very efficient progression and clear decomposition.",
+          "Opportunity: communicate tradeoffs in helper-function naming.",
+        ],
+      },
+      "s-003": {
+        stats: [
+          { label: "Assignment Score", value: "74%" },
+          { label: "Time on Assignment", value: "4.6 hrs" },
+          { label: "Compile Errors Resolved", value: "10" },
+          { label: "Late Submissions", value: "0" },
+        ],
+        aiOverview: [
+          "Needed significant retries for validation flow.",
+          "Improved after writing smaller helper functions.",
+        ],
+      },
+      "s-004": {
+        stats: [
+          { label: "Assignment Score", value: "70%" },
+          { label: "Time on Assignment", value: "4.9 hrs" },
+          { label: "Compile Errors Resolved", value: "12" },
+          { label: "Late Submissions", value: "1" },
+        ],
+        aiOverview: [
+          "Most time spent debugging composed function interfaces.",
+          "Needs reinforcement on incremental test-first strategy.",
+        ],
+      },
+      "s-005": {
+        stats: [
+          { label: "Assignment Score", value: "89%" },
+          { label: "Time on Assignment", value: "3.1 hrs" },
+          { label: "Compile Errors Resolved", value: "3" },
+          { label: "Late Submissions", value: "0" },
+        ],
+        aiOverview: [
+          "Zoe handled function composition well and iterated mostly on polish.",
+          "Could improve by documenting edge behavior before implementation.",
+        ],
+      },
+      "s-006": {
+        stats: [
+          { label: "Assignment Score", value: "76%" },
+          { label: "Time on Assignment", value: "4.2 hrs" },
+          { label: "Compile Errors Resolved", value: "9" },
+          { label: "Late Submissions", value: "0" },
+        ],
+        aiOverview: [
+          "Owen improved significantly in render function structure over time.",
+          "Needs additional practice with validation guard ordering.",
+        ],
+      },
+    },
+    heatmap: {
+      "s-001": { validateInput: 45, buildSchedule: 38, renderHints: 30 },
+      "s-002": { validateInput: 22, buildSchedule: 26, renderHints: 24 },
+      "s-003": { validateInput: 71, buildSchedule: 62, renderHints: 58 },
+      "s-004": { validateInput: 77, buildSchedule: 74, renderHints: 66 },
+      "s-005": { validateInput: 31, buildSchedule: 36, renderHints: 33 },
+      "s-006": { validateInput: 59, buildSchedule: 52, renderHints: 63 },
+    },
+    narratives: {
+      "s-001": {
+        validateInput: "Avery fixed nested empty-input paths after adding targeted tests.",
+        buildSchedule: "Moderate effort balancing readability and special-case branching.",
+        renderHints: "Low struggle; polished output quickly.",
+      },
+      "s-002": {
+        validateInput: "Minimal friction and clean decomposition.",
+        buildSchedule: "One short revision to handle day rollover edge case.",
+        renderHints: "Completed quickly with precise formatting.",
+      },
+      "s-003": {
+        validateInput: "Frequent retries due to missed null/undefined combinations.",
+        buildSchedule: "Struggled with helper boundaries and duplicate logic.",
+        renderHints: "Needed support on deterministic ordering in output.",
+      },
+      "s-004": {
+        validateInput: "Primary blocker with guard ordering and early returns.",
+        buildSchedule: "Difficulties with state mutation across helper calls.",
+        renderHints: "Several formatting regressions before final cleanup.",
+      },
+      "s-005": {
+        validateInput: "Low struggle once optional-field checks were ordered correctly.",
+        buildSchedule: "Moderate effort around sorting and preserving enabled events.",
+        renderHints: "Mostly polish passes for consistent output style.",
+      },
+      "s-006": {
+        validateInput: "Needed multiple attempts to settle on stable guard sequence.",
+        buildSchedule: "Steady improvement after decomposing into helper sections.",
+        renderHints: "Main issue was output clipping and numbering consistency.",
+      },
+    },
+    replay: replayTemplates,
+  },
+];
 
-function describeSectorPath(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
-  const start = polarToCartesian(cx, cy, r, startAngle);
-  const end = polarToCartesian(cx, cy, r, endAngle);
-  const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
-  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`;
+const courses: Course[] = [
+  {
+    id: "cs50-spring26",
+    title: "CS50: Intro to Computer Science",
+    role: "Instructor",
+    term: "Spring 2026",
+    assignments,
+  },
+  {
+    id: "cs210-spring26",
+    title: "CS210: Data Structures",
+    role: "TA",
+    term: "Spring 2026",
+    assignments,
+  },
+  {
+    id: "engr101-spring26",
+    title: "ENGR101: Computing for Engineers",
+    role: "Instructor",
+    term: "Spring 2026",
+    assignments,
+  },
+];
+
+const appShellStyle: React.CSSProperties = {
+  minHeight: "100vh",
+  background: "#f4f8ff",
+  color: "#0f172a",
+};
+
+function scoreColor(score: number) {
+  if (score >= 80) return "#991b1b";
+  if (score >= 65) return "#dc2626";
+  if (score >= 50) return "#f97316";
+  if (score >= 35) return "#facc15";
+  return "#22c55e";
 }
 
 function sharedPrefixLength(a: string, b: string) {
@@ -331,739 +695,749 @@ function sharedPrefixLength(a: string, b: string) {
   return i;
 }
 
-function AnimatedPieChart({
-  title,
-  slices,
-}: {
-  title: string;
-  slices: PieSlice[];
-}) {
-  const [progress, setProgress] = useState(0);
-  const total = slices.reduce((sum, slice) => sum + slice.value, 0);
+function findCourse(courseId?: string) {
+  return courses.find((course) => course.id === courseId);
+}
 
-  useEffect(() => {
-    let frame = 0;
-    const durationMs = 850;
-    const start = performance.now();
-    const tick = (timestamp: number) => {
-      const elapsed = timestamp - start;
-      const next = Math.min(1, elapsed / durationMs);
-      setProgress(next);
-      if (next < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [slices]);
+function findAssignment(course: Course | undefined, assignmentId?: string) {
+  return course?.assignments.find((assignment) => assignment.id === assignmentId);
+}
 
-  let runningAngle = -90;
+function topStruggleSummary(assignment: Assignment) {
+  let bestSymbol = assignment.symbols[0] ?? "";
+  let bestPercent = -1;
+
+  for (const symbol of assignment.symbols) {
+    const percent =
+      (students.filter((student) => (assignment.heatmap[student.id]?.[symbol] ?? 0) >= 60).length /
+        students.length) *
+      100;
+    if (percent > bestPercent) {
+      bestPercent = percent;
+      bestSymbol = symbol;
+    }
+  }
+
+  return `${bestSymbol} was a problem for ${Math.round(bestPercent)}% of the class.`;
+}
+
+function Navbar({ onSignOut }: { onSignOut: () => Promise<void> }) {
+  const location = useLocation();
+  const items = [
+    { label: "Dashboard", to: "/" },
+    { label: "FAQ / How To Use", to: "/faq" },
+    { label: "About Our Product", to: "/about" },
+    { label: "Account", to: "/account" },
+  ];
 
   return (
-    <section style={{ border: "1px solid #ddd", borderRadius: 10, padding: "1rem", background: "#fff" }}>
-      <h3 style={{ marginTop: 0, marginBottom: "0.75rem" }}>{title}</h3>
-      <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
-        <svg width={180} height={180} viewBox="0 0 180 180" role="img" aria-label={title}>
-          <circle cx={90} cy={90} r={72} fill="#f3f4f6" />
-          {slices.map((slice) => {
-            const finalSweep = (slice.value / total) * 360;
-            const sweep = finalSweep * progress;
-            const startAngle = runningAngle;
-            const endAngle = startAngle + sweep;
-            runningAngle += finalSweep;
-            if (sweep <= 0) return null;
-            return <path key={slice.label} d={describeSectorPath(90, 90, 72, startAngle, endAngle)} fill={slice.color} />;
+    <header
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 5,
+        backdropFilter: "blur(10px)",
+        background: "rgba(248, 250, 252, 0.88)",
+        borderBottom: "1px solid #cbd5e1",
+      }}
+    >
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0.9rem 1.1rem", display: "flex", alignItems: "center", gap: "1rem" }}>
+        <div style={{ fontWeight: 800, letterSpacing: 0.5 }}>JumBud</div>
+        <nav style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", flex: 1 }}>
+          {items.map((item) => {
+            const active = location.pathname === item.to;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`nav-link ${active ? "nav-link--active" : ""}`}
+              >
+                {item.label}
+              </Link>
+            );
           })}
-          <circle cx={90} cy={90} r={34} fill="#fff" />
-          <text x={90} y={88} textAnchor="middle" fontSize="10" fill="#6b7280">
-            Total
-          </text>
-          <text x={90} y={104} textAnchor="middle" fontSize="14" fontWeight={700} fill="#111827">
-            {total.toFixed(1)}h
-          </text>
-        </svg>
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, minWidth: 170, flex: 1 }}>
-          {slices.map((slice) => (
-            <li key={slice.label} style={{ display: "flex", alignItems: "center", marginBottom: "0.4rem", gap: "0.45rem" }}>
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  background: slice.color,
-                  borderRadius: 99,
-                  display: "inline-block",
-                }}
-              />
-              <span style={{ flex: 1 }}>{slice.label}</span>
-              <strong>{((slice.value / total) * 100).toFixed(0)}%</strong>
-            </li>
-          ))}
-        </ul>
+        </nav>
+        <button className="btn btn-secondary" onClick={() => void onSignOut()} style={{ padding: "0.45rem 0.75rem" }}>
+          Sign Out
+        </button>
       </div>
-    </section>
+    </header>
   );
 }
 
-function AnimatedBars({ title, bars }: { title: string; bars: TimeBar[] }) {
-  const [progress, setProgress] = useState(0);
-  const max = Math.max(...bars.map((bar) => bar.hours));
+function LoginPage({ onLogin }: { onLogin: (email: string, password: string) => Promise<string | null> }) {
+  const [email, setEmail] = useState("professor@codeactivity.test");
+  const [password, setPassword] = useState("testpass123");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    let frame = 0;
-    const durationMs = 900;
-    const start = performance.now();
-    const tick = (timestamp: number) => {
-      const elapsed = timestamp - start;
-      const next = Math.min(1, elapsed / durationMs);
-      setProgress(next);
-      if (next < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [bars]);
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    const nextError = await onLogin(email, password);
+    if (nextError) setError(nextError);
+    setLoading(false);
+  }
 
   return (
-    <section style={{ border: "1px solid #ddd", borderRadius: 10, padding: "1rem", background: "#fff" }}>
-      <h3 style={{ marginTop: 0, marginBottom: "0.75rem" }}>{title}</h3>
-      <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-        {bars.map((bar) => (
-          <li key={bar.label} style={{ marginBottom: "0.7rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.3rem" }}>
-              <span>{bar.label}</span>
-              <strong>{bar.hours.toFixed(1)}h</strong>
-            </div>
-            <div style={{ height: 10, background: "#f1f5f9", borderRadius: 999 }}>
-              <div
-                style={{
-                  height: "100%",
-                  background: bar.color,
-                  borderRadius: 999,
-                  width: `${((bar.hours / max) * progress * 100).toFixed(1)}%`,
-                  transition: "width 100ms linear",
-                }}
-              />
-            </div>
-          </li>
+    <div
+      className="login-root"
+      style={{
+        minHeight: "100vh",
+        display: "grid",
+        placeItems: "center",
+        background: "#eaf1ff",
+        padding: "1rem",
+      }}
+    >
+      <div
+        className="surface-card"
+        style={{
+          width: "min(940px, 100%)",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          background: "rgba(255,255,255,0.96)",
+          borderRadius: 18,
+          overflow: "hidden",
+          boxShadow: "0 14px 32px rgba(30, 64, 175, 0.16)",
+        }}
+      >
+        <section style={{ padding: "2rem", background: "#1e40af", color: "white" }}>
+          <h1 style={{ marginTop: 0, fontSize: 34, lineHeight: 1.1 }}>JumBud Instructor Portal</h1>
+          <p style={{ opacity: 0.92, fontSize: 15 }}>
+            Track student learning progress, analyze assignment bottlenecks, and replay coding evolution from one dashboard.
+          </p>
+          <ul style={{ paddingLeft: 18, fontSize: 14, lineHeight: 1.5 }}>
+            <li>Course-level visibility similar to Gradescope workflows</li>
+            <li>Assignment-level struggles with symbol/function heatmaps</li>
+            <li>Student replay timeline with AI insight context</li>
+          </ul>
+        </section>
+
+        <section style={{ padding: "2rem" }}>
+          <h2 style={{ marginTop: 0 }}>Sign In</h2>
+          <p style={{ color: "#475569", marginTop: 0 }}>Use your instructor account to continue.</p>
+          <form onSubmit={submit}>
+            <label style={{ display: "block", marginBottom: "0.35rem", fontWeight: 600 }}>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={{ width: "100%", padding: "0.7rem", borderRadius: 8, border: "1px solid #cbd5e1", marginBottom: "0.8rem" }}
+            />
+            <label style={{ display: "block", marginBottom: "0.35rem", fontWeight: 600 }}>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{ width: "100%", padding: "0.7rem", borderRadius: 8, border: "1px solid #cbd5e1", marginBottom: "0.8rem" }}
+            />
+            {error && <p style={{ color: "#dc2626", marginTop: 0 }}>{error}</p>}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+              style={{ width: "100%", padding: "0.75rem", background: "#1d4ed8", color: "white", border: "none", borderRadius: 8, fontWeight: 700 }}
+            >
+              {loading ? "Signing In..." : "Sign In"}
+            </button>
+          </form>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function DashboardPage() {
+  return (
+    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "1rem 1.1rem 2rem" }}>
+      <h1 style={{ marginBottom: "0.3rem" }}>Dashboard</h1>
+      <p style={{ marginTop: 0, color: "#475569" }}>Select a course to inspect assignments and student performance.</p>
+
+      <section className="surface-card" style={{ border: "1px solid #cbd5e1", borderRadius: 12, overflow: "hidden", background: "white" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead style={{ background: "#f8fafc", textAlign: "left" }}>
+            <tr>
+              <th style={{ padding: "0.75rem", borderBottom: "1px solid #cbd5e1" }}>Course</th>
+              <th style={{ padding: "0.75rem", borderBottom: "1px solid #cbd5e1" }}>Role</th>
+              <th style={{ padding: "0.75rem", borderBottom: "1px solid #cbd5e1" }}>Term</th>
+              <th style={{ padding: "0.75rem", borderBottom: "1px solid #cbd5e1" }}>Open</th>
+            </tr>
+          </thead>
+          <tbody>
+            {courses.map((course) => (
+              <tr key={course.id}>
+                <td style={{ padding: "0.75rem", borderBottom: "1px solid #e2e8f0", fontWeight: 600 }}>{course.title}</td>
+                <td style={{ padding: "0.75rem", borderBottom: "1px solid #e2e8f0" }}>{course.role}</td>
+                <td style={{ padding: "0.75rem", borderBottom: "1px solid #e2e8f0" }}>{course.term}</td>
+                <td style={{ padding: "0.75rem", borderBottom: "1px solid #e2e8f0" }}>
+                  <Link to={`/${course.id}`} className="text-link" style={{ color: "#1d4ed8", fontWeight: 700, textDecoration: "none" }}>
+                    View Course
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+    </main>
+  );
+}
+
+function CoursePage() {
+  const { courseId } = useParams();
+  const course = findCourse(courseId);
+  if (!course) return <NotFoundPage />;
+
+  return (
+    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "1rem 1.1rem 2rem" }}>
+      <h1 style={{ marginBottom: "0.3rem" }}>{course.title}</h1>
+      <p style={{ marginTop: 0, color: "#475569" }}>
+        {course.role} • {course.term}
+      </p>
+
+      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.9rem" }}>
+        {course.assignments.map((assignment) => (
+          <article className="surface-card" key={assignment.id} style={{ border: "1px solid #cbd5e1", borderRadius: 12, padding: "1rem", background: "white" }}>
+            <h2 style={{ marginTop: 0, marginBottom: "0.35rem", fontSize: 19 }}>{assignment.title}</h2>
+            <p style={{ margin: "0 0 0.8rem", color: "#475569" }}>Due: {assignment.due}</p>
+            <Link to={`/${course.id}/${assignment.id}`} className="text-link" style={{ color: "#1d4ed8", fontWeight: 700, textDecoration: "none" }}>
+              Open Assignment
+            </Link>
+          </article>
         ))}
-      </ul>
-    </section>
+      </section>
+    </main>
+  );
+}
+
+function AssignmentPage() {
+  const { courseId, assignment: assignmentId } = useParams();
+  const course = findCourse(courseId);
+  const assignment = findAssignment(course, assignmentId);
+
+  const [selectedStudentId, setSelectedStudentId] = useState(students[0].id);
+  const [selectedCell, setSelectedCell] = useState<{ studentId: string; symbol: string } | null>(null);
+
+  useEffect(() => {
+    setSelectedStudentId(students[0].id);
+    setSelectedCell(null);
+  }, [courseId, assignmentId]);
+
+  if (!course || !assignment) return <NotFoundPage />;
+
+  const selectedStudent = students.find((student) => student.id === selectedStudentId) ?? students[0];
+  const selectedStudentAssignmentData = assignment.students[selectedStudentId];
+
+  const narrative =
+    selectedCell && assignment.narratives[selectedCell.studentId]
+      ? assignment.narratives[selectedCell.studentId][selectedCell.symbol]
+      : "Click any heatmap cell to drill into that student's narrative for a specific function or symbol.";
+
+  const summary = topStruggleSummary(assignment);
+
+  return (
+    <main style={{ maxWidth: 1240, margin: "0 auto", padding: "1rem 1.1rem 2rem" }}>
+      <h1 style={{ marginBottom: "0.3rem" }}>{assignment.title}</h1>
+      <p style={{ marginTop: 0, color: "#475569" }}>
+        {course.title} • Due {assignment.due}
+      </p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "260px minmax(380px, 1fr)", gap: "1rem" }}>
+        <aside style={{ border: "1px solid #cbd5e1", borderRadius: 12, background: "white", padding: "0.8rem" }}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Students</h2>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            {students.map((student) => (
+              <li key={student.id} style={{ marginBottom: "0.55rem" }}>
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.45rem" }}>
+                  <button
+                    onClick={() => setSelectedStudentId(student.id)}
+                    className="student-button"
+                    style={{
+                      width: "100%",
+                      textAlign: "left",
+                      border: "none",
+                      background: selectedStudentId === student.id ? "#dbeafe" : "transparent",
+                      padding: "0.35rem",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ fontWeight: 700 }}>{student.name}</div>
+                    <div style={{ fontSize: 12, color: "#64748b" }}>{student.email}</div>
+                  </button>
+                  <Link
+                    to={`/${course.id}/${assignment.id}/${student.id}`}
+                    className="text-link"
+                    style={{ display: "inline-block", marginTop: "0.35rem", fontSize: 13, color: "#1d4ed8", textDecoration: "none", fontWeight: 700 }}
+                  >
+                    Details
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </aside>
+
+        <section style={{ display: "grid", gap: "1rem" }}>
+          <section style={{ border: "1px solid #cbd5e1", borderRadius: 12, background: "white", padding: "1rem" }}>
+            <h2 style={{ marginTop: 0, marginBottom: "0.3rem" }}>Student Assignment Stats: {selectedStudent.name}</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(240px, 1fr) minmax(260px, 1.1fr)", gap: "1rem" }}>
+              <div>
+                <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                  {selectedStudentAssignmentData.stats.map((item) => (
+                    <li key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "0.5rem 0", borderBottom: "1px solid #e2e8f0" }}>
+                      <span>{item.label}</span>
+                      <strong>{item.value}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.75rem", background: "#f8fafc" }}>
+                <h3 style={{ marginTop: 0, marginBottom: "0.5rem", fontSize: 16 }}>AI Student Overview</h3>
+                {selectedStudentAssignmentData.aiOverview.map((line) => (
+                  <p key={line} style={{ margin: "0 0 0.45rem", lineHeight: 1.35 }}>
+                    {line}
+                  </p>
+                ))}
+                <p style={{ marginBottom: 0, color: "#64748b", fontSize: 13 }}>Placeholder for model output integration.</p>
+              </div>
+            </div>
+          </section>
+
+          <section style={{ border: "1px solid #cbd5e1", borderRadius: 12, background: "white", padding: "1rem" }}>
+            <h2 style={{ marginTop: 0, marginBottom: "0.35rem" }}>Overall Class Statistics</h2>
+            <ul style={{ listStyle: "none", margin: "0 0 0.8rem", padding: 0 }}>
+              {assignment.classStats.map((item) => (
+                <li key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "0.45rem 0", borderBottom: "1px solid #e2e8f0" }}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </li>
+              ))}
+            </ul>
+
+            <h3 style={{ marginTop: "0.8rem", marginBottom: "0.4rem" }}>Function/Symbol Struggle Heatmap</h3>
+            <p style={{ marginTop: 0, color: "#475569" }}>{summary}</p>
+
+            <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 8 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
+                <thead style={{ background: "#f8fafc" }}>
+                  <tr>
+                    <th style={{ textAlign: "left", padding: "0.5rem", borderBottom: "1px solid #e2e8f0" }}>Student</th>
+                    {assignment.symbols.map((symbol) => (
+                      <th key={symbol} style={{ textAlign: "left", padding: "0.5rem", borderBottom: "1px solid #e2e8f0", fontWeight: 600 }}>
+                        {symbol}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((student) => (
+                    <tr key={student.id}>
+                      <td style={{ padding: "0.45rem 0.5rem", borderBottom: "1px solid #f1f5f9", fontWeight: 600 }}>{student.name}</td>
+                      {assignment.symbols.map((symbol) => {
+                        const score = assignment.heatmap[student.id]?.[symbol] ?? 0;
+                        const active = selectedCell?.studentId === student.id && selectedCell.symbol === symbol;
+                        return (
+                          <td key={`${student.id}-${symbol}`} style={{ padding: "0.3rem 0.45rem", borderBottom: "1px solid #f1f5f9" }}>
+                            <button
+                              onClick={() => setSelectedCell({ studentId: student.id, symbol })}
+                              style={{
+                                width: "100%",
+                                border: active ? "2px solid #1d4ed8" : "1px solid #cbd5e1",
+                                borderRadius: 6,
+                                background: scoreColor(score),
+                                color: score >= 65 ? "#fff" : "#0f172a",
+                                padding: "0.35rem",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                transition: "filter 140ms ease",
+                              }}
+                            >
+                              {score}
+                            </button>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ marginTop: "0.8rem", border: "1px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", padding: "0.75rem" }}>
+              <h4 style={{ marginTop: 0, marginBottom: "0.35rem" }}>Narrative Drilldown</h4>
+              <p style={{ margin: 0, lineHeight: 1.4 }}>{narrative}</p>
+            </div>
+          </section>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function ReplayPage() {
+  const { courseId, assignment: assignmentId, student: studentId } = useParams();
+  const course = findCourse(courseId);
+  const assignment = findAssignment(course, assignmentId);
+  const student = students.find((item) => item.id === studentId);
+
+  const replayFiles = assignment?.replay[studentId ?? ""] ?? [];
+  const [selectedFilePath, setSelectedFilePath] = useState(replayFiles[0]?.filePath ?? "");
+  const [stepIndex, setStepIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [displayCode, setDisplayCode] = useState("");
+  const [insights, setInsights] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    setSelectedFilePath(replayFiles[0]?.filePath ?? "");
+    setStepIndex(0);
+    setIsPlaying(false);
+  }, [courseId, assignmentId, studentId]);
+
+  const selectedFile = replayFiles.find((file) => file.filePath === selectedFilePath) ?? replayFiles[0];
+  const steps = selectedFile?.steps ?? [];
+  const step = steps[stepIndex];
+  const totalDuration = steps.reduce((sum, item) => sum + item.durationSeconds, 0);
+
+  useEffect(() => {
+    setStepIndex(0);
+    setIsPlaying(false);
+    setInsights(selectedFile ? [selectedFile.baseInsight] : []);
+  }, [selectedFilePath]);
+
+  useEffect(() => {
+    if (!step) {
+      setDisplayCode("");
+      return;
+    }
+    const prefix = sharedPrefixLength(step.before, step.after);
+    let currentText = step.before;
+    let timeoutId = 0;
+    let canceled = false;
+
+    setDisplayCode(currentText);
+
+    const deletePhase = () => {
+      if (canceled) return;
+      if (currentText.length > prefix) {
+        currentText = currentText.slice(0, -1);
+        setDisplayCode(currentText);
+        timeoutId = window.setTimeout(deletePhase, 7);
+        return;
+      }
+      timeoutId = window.setTimeout(typePhase, 55);
+    };
+
+    const typePhase = () => {
+      if (canceled) return;
+      if (currentText.length < step.after.length) {
+        currentText = step.after.slice(0, currentText.length + 1);
+        setDisplayCode(currentText);
+        timeoutId = window.setTimeout(typePhase, 7);
+      }
+    };
+
+    timeoutId = window.setTimeout(deletePhase, 130);
+
+    return () => {
+      canceled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [selectedFilePath, stepIndex, step]);
+
+  useEffect(() => {
+    if (!isPlaying || !step || stepIndex >= steps.length - 1) {
+      if (stepIndex >= steps.length - 1) setIsPlaying(false);
+      return;
+    }
+    const timerId = window.setTimeout(
+      () => setStepIndex((prev) => Math.min(prev + 1, steps.length - 1)),
+      Math.max(700, step.durationSeconds * 900),
+    );
+    return () => window.clearTimeout(timerId);
+  }, [isPlaying, step, stepIndex, steps]);
+
+  if (!course || !assignment || !student) return <NotFoundPage />;
+
+  function playPause() {
+    if (steps.length === 0) return;
+    if (stepIndex >= steps.length - 1) {
+      setStepIndex(0);
+      setIsPlaying(true);
+      return;
+    }
+    setIsPlaying((prev) => !prev);
+  }
+
+  function submitInsight(e: React.FormEvent) {
+    e.preventDefault();
+    const cleaned = query.trim();
+    if (!cleaned) return;
+    setInsights((prev) => [
+      ...prev,
+      `Teacher: ${cleaned}`,
+      "AI: Placeholder answer. Connect this input to your LLM endpoint and append model output here.",
+    ]);
+    setQuery("");
+  }
+
+  return (
+    <main style={{ maxWidth: 1280, margin: "0 auto", padding: "1rem 1.1rem 2rem" }}>
+      <h1 style={{ marginBottom: "0.25rem" }}>{assignment.title} • Progress Replay</h1>
+      <p style={{ marginTop: 0, color: "#475569" }}>
+        {student.name} ({student.email})
+      </p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
+        <section style={{ border: "1px solid #cbd5e1", borderRadius: 12, background: "white", padding: "0.75rem" }}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>File Tree</h2>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            {replayFiles.map((file) => (
+              <li key={file.filePath} style={{ marginBottom: "0.4rem" }}>
+                <button
+                  className="file-tree-button"
+                  onClick={() => setSelectedFilePath(file.filePath)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "0.45rem",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 8,
+                    background: selectedFilePath === file.filePath ? "#dbeafe" : "#fff",
+                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                    fontSize: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  {file.filePath}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section style={{ border: "1px solid #cbd5e1", borderRadius: 12, background: "white", padding: "0.75rem" }}>
+          <div style={{ border: "1px solid #1e293b", borderRadius: 8, background: "#0f172a", padding: "0.75rem", marginBottom: "0.8rem" }}>
+            <p style={{ color: "#cbd5e1", marginTop: 0, marginBottom: "0.45rem" }}>
+              Editing <code>{selectedFile?.filePath ?? "-"}</code>
+            </p>
+            <pre
+              style={{
+                margin: 0,
+                color: "#e2e8f0",
+                minHeight: 280,
+                whiteSpace: "pre-wrap",
+                fontSize: 13,
+                lineHeight: 1.45,
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              }}
+            >
+              {displayCode || "// No replay data for this file."}
+            </pre>
+          </div>
+
+          <div style={{ marginBottom: "0.65rem" }}>
+            <p style={{ marginTop: 0, marginBottom: "0.35rem", fontSize: 12, color: "#64748b" }}>
+              Timeline ({stepIndex + 1}/{Math.max(steps.length, 1)})
+            </p>
+            <div style={{ display: "flex", height: 18, overflow: "hidden", borderRadius: 999, border: "1px solid #cbd5e1" }}>
+              {steps.map((entry, idx) => {
+                const width = totalDuration > 0 ? (entry.durationSeconds / totalDuration) * 100 : 0;
+                const active = idx === stepIndex;
+                return (
+                  <button
+                    className="timeline-segment"
+                    key={entry.id}
+                    onClick={() => {
+                      setIsPlaying(false);
+                      setStepIndex(idx);
+                    }}
+                    title={`${entry.title} (${entry.durationSeconds}s)`}
+                    style={{ width: `${width}%`, border: "none", borderRight: "1px solid #bfdbfe", background: active ? "#2563eb" : "#93c5fd", cursor: "pointer" }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <button
+              className="btn-icon"
+              onClick={() => {
+                setIsPlaying(false);
+                setStepIndex((prev) => Math.max(prev - 1, 0));
+              }}
+              disabled={stepIndex === 0}
+              aria-label="Previous step"
+              title="Previous step"
+              style={{ width: 36, height: 36, display: "grid", placeItems: "center" }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="2" y="3" width="2" height="10" fill="currentColor" />
+                <path d="M12 3L5 8L12 13V3Z" fill="currentColor" />
+              </svg>
+            </button>
+            <button
+              className="btn-icon btn-icon-lg"
+              onClick={playPause}
+              disabled={steps.length === 0}
+              aria-label={isPlaying ? "Pause" : "Play"}
+              title={isPlaying ? "Pause" : "Play"}
+              style={{ width: 44, height: 44, borderRadius: 999, display: "grid", placeItems: "center" }}
+            >
+              {isPlaying ? (
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <rect x="3" y="2" width="3" height="12" fill="currentColor" />
+                  <rect x="10" y="2" width="3" height="12" fill="currentColor" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M4 2L13 8L4 14V2Z" fill="currentColor" />
+                </svg>
+              )}
+            </button>
+            <button
+              className="btn-icon"
+              onClick={() => {
+                setIsPlaying(false);
+                setStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
+              }}
+              disabled={stepIndex >= steps.length - 1}
+              aria-label="Next step"
+              title="Next step"
+              style={{ width: 36, height: 36, display: "grid", placeItems: "center" }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="12" y="3" width="2" height="10" fill="currentColor" />
+                <path d="M4 3L11 8L4 13V3Z" fill="currentColor" />
+              </svg>
+            </button>
+            <span style={{ fontSize: 12, color: "#64748b" }}>{step?.title ?? "No step selected"}</span>
+          </div>
+        </section>
+
+        <section style={{ border: "1px solid #cbd5e1", borderRadius: 12, background: "white", padding: "0.75rem", display: "flex", flexDirection: "column", minHeight: 450 }}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>AI Insights</h2>
+          <div style={{ flex: 1, border: "1px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", padding: "0.6rem", overflowY: "auto", marginBottom: "0.6rem" }}>
+            {insights.map((line, idx) => (
+              <p key={`${idx}-${line}`} style={{ margin: "0 0 0.5rem", lineHeight: 1.35 }}>
+                {line}
+              </p>
+            ))}
+          </div>
+          <form onSubmit={submitInsight} style={{ display: "flex", gap: "0.45rem" }}>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Ask AI about this student and file..."
+              style={{ flex: 1, padding: "0.55rem" }}
+            />
+            <button type="submit" style={{ padding: "0.55rem 0.8rem" }}>
+              Send
+            </button>
+          </form>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function GenericPage({ title, body }: { title: string; body: string }) {
+  return (
+    <main style={{ maxWidth: 900, margin: "0 auto", padding: "1rem 1.1rem 2rem" }}>
+      <h1>{title}</h1>
+      <p style={{ color: "#475569", lineHeight: 1.5 }}>{body}</p>
+    </main>
+  );
+}
+
+function NotFoundPage() {
+  return (
+    <main style={{ maxWidth: 900, margin: "0 auto", padding: "1rem 1.1rem 2rem" }}>
+      <h1>Not Found</h1>
+      <p style={{ color: "#475569" }}>This page does not exist in the current routing setup.</p>
+      <Link to="/" style={{ color: "#1d4ed8", fontWeight: 700, textDecoration: "none" }}>
+        Back to Dashboard
+      </Link>
+    </main>
+  );
+}
+
+function AuthedApp({ onSignOut }: { onSignOut: () => Promise<void> }) {
+  return (
+    <BrowserRouter>
+      <div style={appShellStyle}>
+        <Navbar onSignOut={onSignOut} />
+        <Routes>
+          <Route path="/" element={<DashboardPage />} />
+          <Route
+            path="/faq"
+            element={
+              <GenericPage
+                title="FAQ / How To Use"
+                body="Use Dashboard to choose a course, click into assignments, inspect student and class stats, then open Details for per-student replay and AI-supported insight threads."
+              />
+            }
+          />
+          <Route
+            path="/about"
+            element={
+              <GenericPage
+                title="About Our Product"
+                body="JumBud helps instructors identify where students struggle by combining assignment analytics, replay-based development traces, and AI-assisted interpretation of learning behaviors."
+              />
+            }
+          />
+          <Route
+            path="/account"
+            element={
+              <GenericPage
+                title="Account"
+                body="Account settings can be connected here. Current demo includes authentication via Supabase and role-aware course navigation."
+              />
+            }
+          />
+          <Route path="/:courseId" element={<CoursePage />} />
+          <Route path="/:courseId/:assignment" element={<AssignmentPage />} />
+          <Route path="/:courseId/:assignment/:student" element={<ReplayPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   );
 }
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
-  const [email, setEmail] = useState("professor@codeactivity.test");
-  const [password, setPassword] = useState("testpass123");
-  const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<DashboardTab>("student");
-  const [selectedStudentId, setSelectedStudentId] = useState(students[0].id);
-
-  const [replayStudentId, setReplayStudentId] = useState(students[0].id);
-  const [selectedReplayFilePath, setSelectedReplayFilePath] = useState(
-    replayByStudent[students[0].id]?.[0]?.filePath ?? "",
-  );
-  const [replayStepIndex, setReplayStepIndex] = useState(0);
-  const [isReplayPlaying, setIsReplayPlaying] = useState(false);
-  const [insightMessages, setInsightMessages] = useState<string[]>([]);
-  const [insightInput, setInsightInput] = useState("");
-  const [replayDisplayContent, setReplayDisplayContent] = useState("");
-
-  const selectedStudent = students.find((student) => student.id === selectedStudentId) ?? students[0];
-  const replayStudent = students.find((student) => student.id === replayStudentId) ?? students[0];
-  const replayFiles = replayByStudent[replayStudentId] ?? [];
-  const selectedReplayFile =
-    replayFiles.find((file) => file.filePath === selectedReplayFilePath) ?? replayFiles[0];
-  const replaySteps = selectedReplayFile?.steps ?? [];
-  const replayStep = replaySteps[replayStepIndex];
-  const replayTotalDuration = replaySteps.reduce((total, step) => total + step.durationSeconds, 0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, s) =>
-      setSession(s),
-    );
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession);
+    });
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const files = replayByStudent[replayStudentId] ?? [];
-    setSelectedReplayFilePath(files[0]?.filePath ?? "");
-    setIsReplayPlaying(false);
-  }, [replayStudentId]);
-
-  useEffect(() => {
-    const file = (replayByStudent[replayStudentId] ?? []).find(
-      (item) => item.filePath === selectedReplayFilePath,
-    );
-    if (!file) {
-      setReplayStepIndex(0);
-      setInsightMessages([]);
-      setReplayDisplayContent("");
-      return;
+  async function handleLogin(email: string, password: string) {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error) {
+      window.history.replaceState(null, "", "/");
     }
-    setReplayStepIndex(0);
-    setInsightMessages([file.baseInsight]);
-    setIsReplayPlaying(false);
-  }, [replayStudentId, selectedReplayFilePath]);
-
-  useEffect(() => {
-    if (!isReplayPlaying || replaySteps.length === 0 || !replayStep) return;
-    if (replayStepIndex >= replaySteps.length - 1) {
-      setIsReplayPlaying(false);
-      return;
-    }
-
-    const stepDurationMs = Math.max(700, replayStep.durationSeconds * 900);
-    const timerId = window.setTimeout(() => {
-      setReplayStepIndex((prev) => Math.min(prev + 1, replaySteps.length - 1));
-    }, stepDurationMs);
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [isReplayPlaying, replayStep, replayStepIndex, replaySteps]);
-
-  useEffect(() => {
-    if (!replayStep) {
-      setReplayDisplayContent("");
-      return;
-    }
-    const prefix = sharedPrefixLength(replayStep.before, replayStep.after);
-    let currentText = replayStep.before;
-    let timeoutId = 0;
-    let cancelled = false;
-
-    setReplayDisplayContent(currentText);
-
-    const deletePhase = () => {
-      if (cancelled) return;
-      if (currentText.length > prefix) {
-        currentText = currentText.slice(0, -1);
-        setReplayDisplayContent(currentText);
-        timeoutId = window.setTimeout(deletePhase, 6);
-        return;
-      }
-      timeoutId = window.setTimeout(typePhase, 50);
-    };
-
-    const typePhase = () => {
-      if (cancelled) return;
-      if (currentText.length < replayStep.after.length) {
-        currentText = replayStep.after.slice(0, currentText.length + 1);
-        setReplayDisplayContent(currentText);
-        timeoutId = window.setTimeout(typePhase, 6);
-        return;
-      }
-    };
-
-    timeoutId = window.setTimeout(deletePhase, 120);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  }, [replayStudentId, selectedReplayFilePath, replayStepIndex, replayStep]);
-
-  function handleReplayStepSelect(index: number) {
-    setIsReplayPlaying(false);
-    setReplayStepIndex(index);
+    return error?.message ?? null;
   }
 
-  function handleReplayStepBackward() {
-    if (replayStepIndex === 0) return;
-    setIsReplayPlaying(false);
-    setReplayStepIndex((prev) => Math.max(prev - 1, 0));
-  }
-
-  function handleReplayStepForward() {
-    if (replayStepIndex >= replaySteps.length - 1) return;
-    setIsReplayPlaying(false);
-    setReplayStepIndex((prev) => Math.min(prev + 1, replaySteps.length - 1));
-  }
-
-  function handleReplayPlayPause() {
-    if (replaySteps.length === 0) return;
-    if (replayStepIndex >= replaySteps.length - 1) {
-      setReplayStepIndex(0);
-      setIsReplayPlaying(true);
-      return;
-    }
-    setIsReplayPlaying((prev) => !prev);
-  }
-
-  function handleInsightSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const query = insightInput.trim();
-    if (!query) return;
-    setInsightMessages((prev) => [
-      ...prev,
-      `Teacher: ${query}`,
-      "AI: Placeholder response. Connect this to your model to answer teacher follow-up questions and extend the insight history.",
-    ]);
-    setInsightInput("");
-  }
-
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) setError(error.message);
-  }
-
-  async function handleLogout() {
+  async function handleSignOut() {
     await supabase.auth.signOut();
-    setActiveTab("student");
-    setSelectedStudentId(students[0].id);
-    setReplayStudentId(students[0].id);
-    setSelectedReplayFilePath(replayByStudent[students[0].id]?.[0]?.filePath ?? "");
-    setReplayStepIndex(0);
-    setIsReplayPlaying(false);
   }
 
   if (!session) {
-    return (
-      <div style={{ padding: "2rem", fontFamily: "system-ui, sans-serif", maxWidth: 400 }}>
-        <h1>CodeActivity</h1>
-        <p>Sign in to continue</p>
-        <form onSubmit={handleLogin}>
-          <div style={{ marginBottom: "0.5rem" }}>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{ width: "100%", padding: "0.5rem" }}
-            />
-          </div>
-          <div style={{ marginBottom: "0.5rem" }}>
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{ width: "100%", padding: "0.5rem" }}
-            />
-          </div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button type="submit" style={{ padding: "0.5rem 1rem" }}>
-            Sign In
-          </button>
-        </form>
-      </div>
-    );
+    return <LoginPage onLogin={handleLogin} />;
   }
 
-  return (
-    <div style={{ padding: "2rem", fontFamily: "system-ui, sans-serif", maxWidth: 1100 }}>
-      <h1>CodeActivity</h1>
-      <p>
-        Signed in as: <strong>{session.user.email}</strong>{" "}
-        <button onClick={handleLogout} style={{ marginLeft: "0.5rem" }}>
-          Sign Out
-        </button>
-      </p>
-
-      <div
-        style={{
-          display: "flex",
-          gap: "0.5rem",
-          margin: "1.5rem 0 1rem",
-          borderBottom: "1px solid #ddd",
-          paddingBottom: "0.75rem",
-          flexWrap: "wrap",
-        }}
-      >
-        <button
-          onClick={() => setActiveTab("student")}
-          style={{
-            padding: "0.6rem 1rem",
-            border: "1px solid #bbb",
-            background: activeTab === "student" ? "#111" : "#fff",
-            color: activeTab === "student" ? "#fff" : "#111",
-            borderRadius: 8,
-            cursor: "pointer",
-          }}
-        >
-          Students
-        </button>
-        <button
-          onClick={() => setActiveTab("overall")}
-          style={{
-            padding: "0.6rem 1rem",
-            border: "1px solid #bbb",
-            background: activeTab === "overall" ? "#111" : "#fff",
-            color: activeTab === "overall" ? "#fff" : "#111",
-            borderRadius: 8,
-            cursor: "pointer",
-          }}
-        >
-          Class
-        </button>
-        <button
-          onClick={() => setActiveTab("progress")}
-          style={{
-            padding: "0.6rem 1rem",
-            border: "1px solid #bbb",
-            background: activeTab === "progress" ? "#111" : "#fff",
-            color: activeTab === "progress" ? "#fff" : "#111",
-            borderRadius: 8,
-            cursor: "pointer",
-          }}
-        >
-          Progress Replay
-        </button>
-      </div>
-
-      {activeTab === "student" ? (
-        <>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(280px, 1fr) minmax(320px, 1.2fr)",
-              gap: "1rem",
-            }}
-          >
-            <section style={{ border: "1px solid #ddd", borderRadius: 10, padding: "1rem" }}>
-              <h2 style={{ marginTop: 0 }}>Student Statistics</h2>
-              <div style={{ marginBottom: "0.9rem" }}>
-                <label htmlFor="student-select" style={{ display: "block", marginBottom: "0.4rem" }}>
-                  Select Student
-                </label>
-                <select
-                  id="student-select"
-                  value={selectedStudentId}
-                  onChange={(e) => setSelectedStudentId(e.target.value)}
-                  style={{ width: "100%", padding: "0.5rem" }}
-                >
-                  {students.map((student) => (
-                    <option key={student.id} value={student.id}>
-                      {student.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                {selectedStudent.stats.map((item) => (
-                  <li
-                    key={item.label}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      padding: "0.6rem 0",
-                      borderBottom: "1px solid #eee",
-                    }}
-                  >
-                    <span>{item.label}</span>
-                    <strong>{item.value}</strong>
-                  </li>
-                ))}
-              </ul>
-            </section>
-            <section style={{ border: "1px solid #ddd", borderRadius: 10, padding: "1rem" }}>
-              <h2 style={{ marginTop: 0 }}>AI Student Overview: {selectedStudent.name}</h2>
-              {selectedStudent.aiOverview.map((paragraph) => (
-                <p key={paragraph} style={{ marginBottom: "0.5rem" }}>
-                  {paragraph}
-                </p>
-              ))}
-              <p style={{ color: "#666", marginBottom: 0 }}>
-                Placeholder for model output. Wire this panel to your AI service once available.
-              </p>
-            </section>
-          </div>
-          <section style={{ marginTop: "1rem", padding: "1rem", border: "1px solid #ddd", borderRadius: 10 }}>
-            <h2 style={{ margin: 0 }}>Time Analytics</h2>
-            <p style={{ marginTop: "0.4rem", color: "#4b5563" }}>
-              Example chart space for file, function, and workflow time metrics.
-            </p>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))",
-                gap: "0.8rem",
-              }}
-            >
-              <AnimatedPieChart
-                key={`student-files-${selectedStudentId}`}
-                title={`Time by File (${selectedStudent.name})`}
-                slices={studentFileTime[selectedStudentId]}
-              />
-              <AnimatedPieChart
-                key={`student-functions-${selectedStudentId}`}
-                title={`Time by Function (${selectedStudent.name})`}
-                slices={studentFunctionTime[selectedStudentId]}
-              />
-              <AnimatedBars
-                key={`student-workflow-${selectedStudentId}`}
-                title="Workflow Time Split"
-                bars={studentTimeBars[selectedStudentId]}
-              />
-            </div>
-          </section>
-        </>
-      ) : activeTab === "overall" ? (
-        <>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(340px, 1.5fr) minmax(260px, 1fr)",
-              gap: "1rem",
-            }}
-          >
-            <section style={{ border: "1px solid #ddd", borderRadius: 10, padding: "1rem" }}>
-              <h2 style={{ marginTop: 0 }}>AI Cohort Overview</h2>
-              <p style={{ marginBottom: "0.5rem" }}>
-                Across the class, the most common struggles are algorithm planning before coding,
-                debugging runtime errors, and writing clear function interfaces.
-              </p>
-              <p style={{ marginBottom: "0.5rem" }}>
-                Students perform better when problems are broken into checkpoints and when examples
-                include explicit reasoning steps.
-              </p>
-              <p style={{ color: "#666", marginBottom: 0 }}>
-                Placeholder for expanded cohort analysis from your AI model.
-              </p>
-            </section>
-            <section style={{ border: "1px solid #ddd", borderRadius: 10, padding: "1rem" }}>
-              <h2 style={{ marginTop: 0 }}>Overall Average Statistics</h2>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                {overallStats.map((item) => (
-                  <li
-                    key={item.label}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      padding: "0.6rem 0",
-                      borderBottom: "1px solid #eee",
-                    }}
-                  >
-                    <span>{item.label}</span>
-                    <strong>{item.value}</strong>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          </div>
-          <section style={{ marginTop: "1rem", padding: "1rem", border: "1px solid #ddd", borderRadius: 10 }}>
-            <h2 style={{ margin: 0 }}>Class Time Analytics</h2>
-            <p style={{ marginTop: "0.4rem", color: "#4b5563" }}>
-              Example chart space for class-level time spent by files and functions.
-            </p>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))",
-                gap: "0.8rem",
-              }}
-            >
-              <AnimatedPieChart title="Average Time by File (Class)" slices={classFileTime} />
-              <AnimatedPieChart title="Average Time by Function (Class)" slices={classFunctionTime} />
-              <AnimatedBars title="Class Workflow Time Split" bars={classTimeBars} />
-            </div>
-          </section>
-        </>
-      ) : (
-        <section style={{ border: "1px solid #ddd", borderRadius: 10, padding: "1rem" }}>
-          <h2 style={{ marginTop: 0 }}>Student Progress Replay</h2>
-          <p style={{ marginTop: "0.4rem", color: "#4b5563" }}>
-            Switch students and review their edits in a player-style timeline with file-level AI insights.
-          </p>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: "0.8rem",
-              marginBottom: "1rem",
-            }}
-          >
-            <div>
-              <label htmlFor="replay-student" style={{ display: "block", marginBottom: "0.35rem" }}>
-                Student
-              </label>
-              <select
-                id="replay-student"
-                value={replayStudentId}
-                onChange={(e) => setReplayStudentId(e.target.value)}
-                style={{ width: "100%", padding: "0.5rem" }}
-              >
-                {students.map((student) => (
-                  <option key={student.id} value={student.id}>
-                    {student.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
-            <section style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: "0.75rem", background: "#f8fafc" }}>
-              <p style={{ marginTop: 0, marginBottom: "0.6rem", fontWeight: 700 }}>File Tree</p>
-              <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-                {replayFiles.map((file) => (
-                  <li key={file.filePath} style={{ marginBottom: "0.35rem" }}>
-                    <button
-                      onClick={() => setSelectedReplayFilePath(file.filePath)}
-                      style={{
-                        width: "100%",
-                        textAlign: "left",
-                        padding: "0.4rem 0.5rem",
-                        border: "1px solid #d1d5db",
-                        borderRadius: 6,
-                        background: selectedReplayFile?.filePath === file.filePath ? "#dbeafe" : "#fff",
-                        cursor: "pointer",
-                        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                        fontSize: 12,
-                      }}
-                    >
-                      {file.filePath}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            <section style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: "0.75rem", background: "#f8fafc" }}>
-              <div style={{ border: "1px solid #1f2937", borderRadius: 8, background: "#0f172a", padding: "0.75rem", marginBottom: "0.8rem" }}>
-                <p style={{ color: "#cbd5e1", marginTop: 0, marginBottom: "0.5rem" }}>
-                  {replayStudent.name} editing <code>{selectedReplayFile?.filePath ?? "-"}</code>
-                </p>
-                <pre
-                  style={{
-                    margin: 0,
-                    color: "#e2e8f0",
-                    minHeight: 260,
-                    whiteSpace: "pre-wrap",
-                    fontSize: 13,
-                    lineHeight: 1.45,
-                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                  }}
-                >
-                  {replayDisplayContent || "// No replay data for this file yet."}
-                </pre>
-              </div>
-
-              <div style={{ marginBottom: "0.7rem" }}>
-                <p style={{ marginTop: 0, marginBottom: "0.35rem", color: "#4b5563", fontSize: 12 }}>
-                  Timeline ({replayStepIndex + 1}/{Math.max(replaySteps.length, 1)})
-                </p>
-                <div style={{ display: "flex", height: 18, borderRadius: 999, overflow: "hidden", border: "1px solid #d1d5db" }}>
-                  {replaySteps.map((step, idx) => {
-                    const width = replayTotalDuration > 0 ? (step.durationSeconds / replayTotalDuration) * 100 : 0;
-                    const isActive = idx === replayStepIndex;
-                    return (
-                      <button
-                        key={step.id}
-                        onClick={() => handleReplayStepSelect(idx)}
-                        title={`${step.title} (${step.durationSeconds}s)`}
-                        style={{
-                          width: `${width}%`,
-                          border: "none",
-                          borderRight: "1px solid #d1d5db",
-                          background: isActive ? "#2563eb" : "#93c5fd",
-                          cursor: "pointer",
-                          padding: 0,
-                        }}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <button
-                  onClick={handleReplayStepBackward}
-                  disabled={replayStepIndex === 0}
-                  aria-label="Previous step"
-                  title="Previous step"
-                  style={{ width: 36, height: 36, display: "grid", placeItems: "center" }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <rect x="2" y="3" width="2" height="10" fill="currentColor" />
-                    <path d="M12 3L5 8L12 13V3Z" fill="currentColor" />
-                  </svg>
-                </button>
-                <button
-                  onClick={handleReplayPlayPause}
-                  disabled={replaySteps.length === 0}
-                  aria-label={isReplayPlaying ? "Pause" : "Play"}
-                  title={isReplayPlaying ? "Pause" : "Play"}
-                  style={{ width: 44, height: 44, borderRadius: 999, display: "grid", placeItems: "center" }}
-                >
-                  {isReplayPlaying ? (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                      <rect x="3" y="2" width="3" height="12" fill="currentColor" />
-                      <rect x="10" y="2" width="3" height="12" fill="currentColor" />
-                    </svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                      <path d="M4 2L13 8L4 14V2Z" fill="currentColor" />
-                    </svg>
-                  )}
-                </button>
-                <button
-                  onClick={handleReplayStepForward}
-                  disabled={replayStepIndex >= replaySteps.length - 1}
-                  aria-label="Next step"
-                  title="Next step"
-                  style={{ width: 36, height: 36, display: "grid", placeItems: "center" }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <rect x="12" y="3" width="2" height="10" fill="currentColor" />
-                    <path d="M4 3L11 8L4 13V3Z" fill="currentColor" />
-                  </svg>
-                </button>
-                <span style={{ fontSize: 12, color: "#4b5563" }}>
-                  {replayStep?.title ?? "No step selected"}
-                </span>
-              </div>
-            </section>
-
-            <section
-              style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: 8,
-                padding: "0.75rem",
-                background: "#ffffff",
-                display: "flex",
-                flexDirection: "column",
-                minHeight: 430,
-              }}
-            >
-              <p style={{ marginTop: 0, marginBottom: "0.6rem", fontWeight: 700 }}>AI Insights</p>
-              <div
-                style={{
-                  flex: 1,
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 6,
-                  padding: "0.5rem",
-                  overflowY: "auto",
-                  background: "#f9fafb",
-                  marginBottom: "0.6rem",
-                }}
-              >
-                {insightMessages.map((message, index) => (
-                  <p key={`${message}-${index}`} style={{ margin: "0 0 0.5rem", fontSize: 13, lineHeight: 1.35 }}>
-                    {message}
-                  </p>
-                ))}
-              </div>
-              <form onSubmit={handleInsightSubmit} style={{ display: "flex", gap: "0.4rem" }}>
-                <input
-                  value={insightInput}
-                  onChange={(e) => setInsightInput(e.target.value)}
-                  placeholder="Ask AI about this student's progress..."
-                  style={{ flex: 1, padding: "0.5rem" }}
-                />
-                <button type="submit" style={{ padding: "0.5rem 0.7rem" }}>
-                  Send
-                </button>
-              </form>
-            </section>
-          </div>
-        </section>
-      )}
-    </div>
-  );
+  return <AuthedApp onSignOut={handleSignOut} />;
 }
 
 export default App;

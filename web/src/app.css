@@ -1,0 +1,168 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+:root {
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color: #0f172a;
+  background: #f4f8ff;
+}
+
+input,
+select,
+button,
+textarea {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+button {
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+button:hover:not(:disabled) {
+  background: #dbeafe;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(30, 64, 175, 0.13);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button,
+label,
+th,
+.nav-link,
+.text-link {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.btn {
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: #1d4ed8 !important;
+  color: #fff !important;
+  border-color: #1d4ed8 !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #1e40af !important;
+}
+
+.btn-secondary {
+  background: #ffffff;
+  color: #1e3a8a;
+  border-color: #93c5fd;
+}
+
+.btn-icon {
+  border-radius: 10px;
+  background: #ffffff;
+  border-color: #bfdbfe;
+}
+
+.btn-icon-lg {
+  border-radius: 999px;
+}
+
+.surface-card {
+  transition: none;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #0f172a;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: color 140ms ease, background 140ms ease;
+}
+
+.nav-link:hover {
+  background: #e0ecff;
+  color: #1d4ed8;
+}
+
+.nav-link--active {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.text-link {
+  transition: color 140ms ease, opacity 140ms ease;
+}
+
+.text-link:hover {
+  color: #1e40af !important;
+  opacity: 0.95;
+}
+
+.student-button {
+  transition: background 140ms ease;
+}
+
+.student-button:hover {
+  background: #eff6ff !important;
+}
+
+.file-tree-button {
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.file-tree-button:hover {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+}
+
+.timeline-segment:hover {
+  filter: brightness(0.93);
+}
