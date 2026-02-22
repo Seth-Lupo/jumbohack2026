@@ -83,6 +83,9 @@ type Course = {
   assignments: Assignment[];
 };
 
+type ThemeMode = "light" | "dark";
+type NavIconName = "dashboard" | "faq" | "about" | "account";
+
 const students: Student[] = [
   { id: "s-001", name: "Avery Johnson", email: "avery.johnson@school.edu" },
   { id: "s-002", name: "Noah Patel", email: "noah.patel@school.edu" },
@@ -388,7 +391,7 @@ const replayTemplates: Record<string, ReplayFile[]> = {
   ],
 };
 
-const assignments: Assignment[] = [
+const baseAssignments: Assignment[] = [
   {
     id: "a1-debugging-foundations",
     title: "Debugging Foundations",
@@ -651,34 +654,66 @@ const assignments: Assignment[] = [
   },
 ];
 
+const cs50Assignments: Assignment[] = baseAssignments.map((assignment) => ({ ...assignment }));
+
+const cs210Assignments: Assignment[] = [
+  {
+    ...baseAssignments[0],
+    id: "a1-pointer-memory-lab",
+    title: "Pointer Memory Lab",
+    due: "Mar 06, 2026",
+  },
+  {
+    ...baseAssignments[1],
+    id: "a2-tree-traversal-analysis",
+    title: "Tree Traversal Analysis",
+    due: "Mar 20, 2026",
+  },
+];
+
+const engrAssignments: Assignment[] = [
+  {
+    ...baseAssignments[0],
+    id: "a1-systems-debug-practicum",
+    title: "Systems Debug Practicum",
+    due: "Mar 03, 2026",
+  },
+  {
+    ...baseAssignments[1],
+    id: "a2-interface-design-lab",
+    title: "Interface Design Lab",
+    due: "Mar 17, 2026",
+  },
+];
+
 const courses: Course[] = [
   {
     id: "cs50-spring26",
     title: "CS50: Intro to Computer Science",
     role: "Instructor",
     term: "Spring 2026",
-    assignments,
+    assignments: cs50Assignments,
   },
   {
     id: "cs210-spring26",
     title: "CS210: Data Structures",
     role: "TA",
     term: "Spring 2026",
-    assignments,
+    assignments: cs210Assignments,
   },
   {
     id: "engr101-spring26",
     title: "ENGR101: Computing for Engineers",
     role: "Instructor",
     term: "Spring 2026",
-    assignments,
+    assignments: engrAssignments,
   },
 ];
 
 const appShellStyle: React.CSSProperties = {
   minHeight: "100vh",
-  background: "#f4f8ff",
-  color: "#0f172a",
+  background: "var(--bg-app)",
+  color: "var(--text-primary)",
 };
 
 function scoreColor(score: number) {
@@ -721,47 +756,131 @@ function topStruggleSummary(assignment: Assignment) {
   return `${bestSymbol} was a problem for ${Math.round(bestPercent)}% of the class.`;
 }
 
-function Navbar({ onSignOut }: { onSignOut: () => Promise<void> }) {
+function Navbar({
+  onSignOut,
+  theme,
+  onToggleTheme,
+  collapsed,
+  onToggleCollapsed,
+}: {
+  onSignOut: () => Promise<void>;
+  theme: ThemeMode;
+  onToggleTheme: () => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+}) {
   const location = useLocation();
   const items = [
-    { label: "Dashboard", to: "/" },
-    { label: "FAQ / How To Use", to: "/faq" },
-    { label: "About Our Product", to: "/about" },
-    { label: "Account", to: "/account" },
+    { label: "Dashboard", to: "/", icon: "dashboard" as NavIconName },
+    { label: "FAQ / How To Use", to: "/faq", icon: "faq" as NavIconName },
+    { label: "About Our Product", to: "/about", icon: "about" as NavIconName },
+    { label: "Account", to: "/account", icon: "account" as NavIconName },
   ];
 
+  function renderNavIcon(icon: NavIconName) {
+    if (icon === "dashboard") {
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 11.5 12 4l9 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M6 10.5V20h12v-9.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    }
+    if (icon === "faq") {
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M9.8 9.2a2.4 2.4 0 1 1 4.2 1.6c-.8.8-1.7 1.2-1.7 2.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <circle cx="12" cy="16.8" r="1" fill="currentColor" />
+        </svg>
+      );
+    }
+    if (icon === "about") {
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M12 10.6V16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <circle cx="12" cy="7.5" r="1" fill="currentColor" />
+        </svg>
+      );
+    }
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="8.2" r="3.2" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M5 19.2c1.7-2.8 4-4.2 7-4.2s5.3 1.4 7 4.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
   return (
-    <header
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 5,
-        backdropFilter: "blur(10px)",
-        background: "rgba(248, 250, 252, 0.88)",
-        borderBottom: "1px solid #cbd5e1",
-      }}
-    >
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0.9rem 1.1rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-        <div style={{ fontWeight: 800, letterSpacing: 0.5 }}>JumBud</div>
-        <nav style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", flex: 1 }}>
-          {items.map((item) => {
-            const active = location.pathname === item.to;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`nav-link ${active ? "nav-link--active" : ""}`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <button className="btn btn-secondary" onClick={() => void onSignOut()} style={{ padding: "0.45rem 0.75rem" }}>
-          Sign Out
+    <aside className={`sidebar ${collapsed ? "sidebar--collapsed" : ""}`}>
+      <div style={{ padding: "1rem 0.9rem 0.6rem", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+        <div style={{ fontWeight: 800, letterSpacing: 0.5, fontSize: 30, lineHeight: 1.1 }}>
+          <span className="brand-label">JumBud</span>
+          <span className="brand-mini">JB</span>
+        </div>
+      </div>
+      <nav className="sidebar-nav" style={{ display: "grid", gap: "0.25rem", padding: "0.8rem 0.6rem", alignContent: "start" }}>
+        {items.map((item) => {
+          const active = location.pathname === item.to;
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`nav-link ${active ? "nav-link--active" : ""}`}
+              data-tooltip={item.label}
+              aria-label={collapsed ? item.label : undefined}
+            >
+              <span className="nav-icon">{renderNavIcon(item.icon)}</span>
+              <span className="nav-label">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+      <button
+        className="btn btn-secondary sidebar-toggle-rail"
+        onClick={onToggleCollapsed}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
+        {collapsed ? "»" : "«"}
+      </button>
+      <div className="sidebar-footer" style={{ marginTop: "auto", display: "flex", gap: "0.5rem", padding: "0.8rem", borderTop: "1px solid var(--border)" }}>
+        <button
+          className="btn btn-secondary theme-toggle"
+          onClick={onToggleTheme}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          style={{ display: "grid", placeItems: "center" }}
+        >
+          {theme === "dark" ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M12 4V2M12 22v-2M4 12H2m20 0h-2M6.34 6.34 4.93 4.93m14.14 14.14-1.41-1.41M6.34 17.66l-1.41 1.41m14.14-14.14-1.41 1.41M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12Z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </button>
+        <button className="btn btn-secondary signout-btn" onClick={() => void onSignOut()} style={{ flex: 1, padding: "0.45rem 0.75rem" }}>
+          <span className="signout-label">Sign Out</span>
+          <span className="signout-mini">⎋</span>
         </button>
       </div>
-    </header>
+    </aside>
   );
 }
 
@@ -787,7 +906,7 @@ function LoginPage({ onLogin }: { onLogin: (email: string, password: string) => 
         minHeight: "100vh",
         display: "grid",
         placeItems: "center",
-        background: "#eaf1ff",
+        background: "var(--bg-page)",
         padding: "1rem",
       }}
     >
@@ -797,13 +916,13 @@ function LoginPage({ onLogin }: { onLogin: (email: string, password: string) => 
           width: "min(940px, 100%)",
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          background: "rgba(255,255,255,0.96)",
+          background: "var(--surface)",
           borderRadius: 18,
           overflow: "hidden",
-          boxShadow: "0 14px 32px rgba(30, 64, 175, 0.16)",
+          boxShadow: "0 14px 32px color-mix(in srgb, var(--accent) 24%, transparent)",
         }}
       >
-        <section style={{ padding: "2rem", background: "#1e40af", color: "white" }}>
+        <section style={{ padding: "2rem", background: "var(--accent-strong)", color: "white" }}>
           <h1 style={{ marginTop: 0, fontSize: 34, lineHeight: 1.1 }}>JumBud Instructor Portal</h1>
           <p style={{ opacity: 0.92, fontSize: 15 }}>
             Track student learning progress, analyze assignment bottlenecks, and replay coding evolution from one dashboard.
@@ -817,28 +936,28 @@ function LoginPage({ onLogin }: { onLogin: (email: string, password: string) => 
 
         <section style={{ padding: "2rem" }}>
           <h2 style={{ marginTop: 0 }}>Sign In</h2>
-          <p style={{ color: "#475569", marginTop: 0 }}>Use your instructor account to continue.</p>
+          <p style={{ color: "var(--text-muted)", marginTop: 0 }}>Use your instructor account to continue.</p>
           <form onSubmit={submit}>
             <label style={{ display: "block", marginBottom: "0.35rem", fontWeight: 600 }}>Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={{ width: "100%", padding: "0.7rem", borderRadius: 8, border: "1px solid #cbd5e1", marginBottom: "0.8rem" }}
+              style={{ width: "100%", padding: "0.7rem", borderRadius: 8, border: "1px solid var(--border)", marginBottom: "0.8rem" }}
             />
             <label style={{ display: "block", marginBottom: "0.35rem", fontWeight: 600 }}>Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ width: "100%", padding: "0.7rem", borderRadius: 8, border: "1px solid #cbd5e1", marginBottom: "0.8rem" }}
+              style={{ width: "100%", padding: "0.7rem", borderRadius: 8, border: "1px solid var(--border)", marginBottom: "0.8rem" }}
             />
             {error && <p style={{ color: "#dc2626", marginTop: 0 }}>{error}</p>}
             <button
               type="submit"
               className="btn btn-primary"
               disabled={loading}
-              style={{ width: "100%", padding: "0.75rem", background: "#1d4ed8", color: "white", border: "none", borderRadius: 8, fontWeight: 700 }}
+              style={{ width: "100%", padding: "0.75rem", background: "var(--accent)", color: "white", border: "none", borderRadius: 8, fontWeight: 700 }}
             >
               {loading ? "Signing In..." : "Sign In"}
             </button>
@@ -853,26 +972,26 @@ function DashboardPage() {
   return (
     <main style={{ maxWidth: 1200, margin: "0 auto", padding: "1rem 1.1rem 2rem" }}>
       <h1 style={{ marginBottom: "0.3rem" }}>Dashboard</h1>
-      <p style={{ marginTop: 0, color: "#475569" }}>Select a course to inspect assignments and student performance.</p>
+      <p style={{ marginTop: 0, color: "var(--text-muted)" }}>Select a course to inspect assignments and student performance.</p>
 
-      <section className="surface-card" style={{ border: "1px solid #cbd5e1", borderRadius: 12, overflow: "hidden", background: "white" }}>
+      <section className="surface-card" style={{ border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden", background: "var(--surface)" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead style={{ background: "#f8fafc", textAlign: "left" }}>
+          <thead style={{ background: "var(--surface-muted)", textAlign: "left" }}>
             <tr>
-              <th style={{ padding: "0.75rem", borderBottom: "1px solid #cbd5e1" }}>Course</th>
-              <th style={{ padding: "0.75rem", borderBottom: "1px solid #cbd5e1" }}>Role</th>
-              <th style={{ padding: "0.75rem", borderBottom: "1px solid #cbd5e1" }}>Term</th>
-              <th style={{ padding: "0.75rem", borderBottom: "1px solid #cbd5e1" }}>Open</th>
+              <th style={{ padding: "0.75rem", borderBottom: "1px solid var(--border)" }}>Course</th>
+              <th style={{ padding: "0.75rem", borderBottom: "1px solid var(--border)" }}>Role</th>
+              <th style={{ padding: "0.75rem", borderBottom: "1px solid var(--border)" }}>Term</th>
+              <th style={{ padding: "0.75rem", borderBottom: "1px solid var(--border)" }}>Open</th>
             </tr>
           </thead>
           <tbody>
             {courses.map((course) => (
               <tr key={course.id}>
-                <td style={{ padding: "0.75rem", borderBottom: "1px solid #e2e8f0", fontWeight: 600 }}>{course.title}</td>
-                <td style={{ padding: "0.75rem", borderBottom: "1px solid #e2e8f0" }}>{course.role}</td>
-                <td style={{ padding: "0.75rem", borderBottom: "1px solid #e2e8f0" }}>{course.term}</td>
-                <td style={{ padding: "0.75rem", borderBottom: "1px solid #e2e8f0" }}>
-                  <Link to={`/${course.id}`} className="text-link" style={{ color: "#1d4ed8", fontWeight: 700, textDecoration: "none" }}>
+                <td style={{ padding: "0.75rem", borderBottom: "1px solid var(--border-soft)", fontWeight: 600 }}>{course.title}</td>
+                <td style={{ padding: "0.75rem", borderBottom: "1px solid var(--border-soft)" }}>{course.role}</td>
+                <td style={{ padding: "0.75rem", borderBottom: "1px solid var(--border-soft)" }}>{course.term}</td>
+                <td style={{ padding: "0.75rem", borderBottom: "1px solid var(--border-soft)" }}>
+                  <Link to={`/${course.id}`} className="text-link" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
                     View Course
                   </Link>
                 </td>
@@ -893,16 +1012,16 @@ function CoursePage() {
   return (
     <main style={{ maxWidth: 1200, margin: "0 auto", padding: "1rem 1.1rem 2rem" }}>
       <h1 style={{ marginBottom: "0.3rem" }}>{course.title}</h1>
-      <p style={{ marginTop: 0, color: "#475569" }}>
+      <p style={{ marginTop: 0, color: "var(--text-muted)" }}>
         {course.role} • {course.term}
       </p>
 
       <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.9rem" }}>
         {course.assignments.map((assignment) => (
-          <article className="surface-card" key={assignment.id} style={{ border: "1px solid #cbd5e1", borderRadius: 12, padding: "1rem", background: "white" }}>
+          <article className="surface-card" key={assignment.id} style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "1rem", background: "var(--surface)" }}>
             <h2 style={{ marginTop: 0, marginBottom: "0.35rem", fontSize: 19 }}>{assignment.title}</h2>
-            <p style={{ margin: "0 0 0.8rem", color: "#475569" }}>Due: {assignment.due}</p>
-            <Link to={`/${course.id}/${assignment.id}`} className="text-link" style={{ color: "#1d4ed8", fontWeight: 700, textDecoration: "none" }}>
+            <p style={{ margin: "0 0 0.8rem", color: "var(--text-muted)" }}>Due: {assignment.due}</p>
+            <Link to={`/${course.id}/${assignment.id}`} className="text-link" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
               Open Assignment
             </Link>
           </article>
@@ -940,17 +1059,17 @@ function AssignmentPage() {
   return (
     <main style={{ maxWidth: 1240, margin: "0 auto", padding: "1rem 1.1rem 2rem" }}>
       <h1 style={{ marginBottom: "0.3rem" }}>{assignment.title}</h1>
-      <p style={{ marginTop: 0, color: "#475569" }}>
+      <p style={{ marginTop: 0, color: "var(--text-muted)" }}>
         {course.title} • Due {assignment.due}
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "260px minmax(380px, 1fr)", gap: "1rem" }}>
-        <aside style={{ border: "1px solid #cbd5e1", borderRadius: 12, background: "white", padding: "0.8rem" }}>
+        <aside style={{ border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: "0.8rem" }}>
           <h2 style={{ marginTop: 0, fontSize: 18 }}>Students</h2>
           <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
             {students.map((student) => (
               <li key={student.id} style={{ marginBottom: "0.55rem" }}>
-                <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.45rem" }}>
+                <div style={{ border: "1px solid var(--border-soft)", borderRadius: 8, padding: "0.45rem" }}>
                   <button
                     onClick={() => setSelectedStudentId(student.id)}
                     className="student-button"
@@ -958,19 +1077,19 @@ function AssignmentPage() {
                       width: "100%",
                       textAlign: "left",
                       border: "none",
-                      background: selectedStudentId === student.id ? "#dbeafe" : "transparent",
+                      background: selectedStudentId === student.id ? "var(--accent-soft)" : "transparent",
                       padding: "0.35rem",
                       borderRadius: 6,
                       cursor: "pointer",
                     }}
                   >
                     <div style={{ fontWeight: 700 }}>{student.name}</div>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>{student.email}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{student.email}</div>
                   </button>
                   <Link
                     to={`/${course.id}/${assignment.id}/${student.id}`}
                     className="text-link"
-                    style={{ display: "inline-block", marginTop: "0.35rem", fontSize: 13, color: "#1d4ed8", textDecoration: "none", fontWeight: 700 }}
+                    style={{ display: "inline-block", marginTop: "0.35rem", fontSize: 13, color: "var(--accent)", textDecoration: "none", fontWeight: 700 }}
                   >
                     Details
                   </Link>
@@ -981,36 +1100,36 @@ function AssignmentPage() {
         </aside>
 
         <section style={{ display: "grid", gap: "1rem" }}>
-          <section style={{ border: "1px solid #cbd5e1", borderRadius: 12, background: "white", padding: "1rem" }}>
+          <section style={{ border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: "1rem" }}>
             <h2 style={{ marginTop: 0, marginBottom: "0.3rem" }}>Student Assignment Stats: {selectedStudent.name}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "minmax(240px, 1fr) minmax(260px, 1.1fr)", gap: "1rem" }}>
               <div>
                 <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
                   {selectedStudentAssignmentData.stats.map((item) => (
-                    <li key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "0.5rem 0", borderBottom: "1px solid #e2e8f0" }}>
+                    <li key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "0.5rem 0", borderBottom: "1px solid var(--border-soft)" }}>
                       <span>{item.label}</span>
                       <strong>{item.value}</strong>
                     </li>
                   ))}
                 </ul>
               </div>
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.75rem", background: "#f8fafc" }}>
+              <div style={{ border: "1px solid var(--border-soft)", borderRadius: 8, padding: "0.75rem", background: "var(--surface-muted)" }}>
                 <h3 style={{ marginTop: 0, marginBottom: "0.5rem", fontSize: 16 }}>AI Student Overview</h3>
                 {selectedStudentAssignmentData.aiOverview.map((line) => (
                   <p key={line} style={{ margin: "0 0 0.45rem", lineHeight: 1.35 }}>
                     {line}
                   </p>
                 ))}
-                <p style={{ marginBottom: 0, color: "#64748b", fontSize: 13 }}>Placeholder for model output integration.</p>
+                <p style={{ marginBottom: 0, color: "var(--text-muted)", fontSize: 13 }}>Placeholder for model output integration.</p>
               </div>
             </div>
           </section>
 
-          <section style={{ border: "1px solid #cbd5e1", borderRadius: 12, background: "white", padding: "1rem" }}>
+          <section style={{ border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: "1rem" }}>
             <h2 style={{ marginTop: 0, marginBottom: "0.35rem" }}>Overall Class Statistics</h2>
             <ul style={{ listStyle: "none", margin: "0 0 0.8rem", padding: 0 }}>
               {assignment.classStats.map((item) => (
-                <li key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "0.45rem 0", borderBottom: "1px solid #e2e8f0" }}>
+                <li key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "0.45rem 0", borderBottom: "1px solid var(--border-soft)" }}>
                   <span>{item.label}</span>
                   <strong>{item.value}</strong>
                 </li>
@@ -1018,15 +1137,15 @@ function AssignmentPage() {
             </ul>
 
             <h3 style={{ marginTop: "0.8rem", marginBottom: "0.4rem" }}>Function/Symbol Struggle Heatmap</h3>
-            <p style={{ marginTop: 0, color: "#475569" }}>{summary}</p>
+            <p style={{ marginTop: 0, color: "var(--text-muted)" }}>{summary}</p>
 
-            <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 8 }}>
+            <div style={{ overflowX: "auto", border: "1px solid var(--border-soft)", borderRadius: 8 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
-                <thead style={{ background: "#f8fafc" }}>
+                <thead style={{ background: "var(--surface-muted)" }}>
                   <tr>
-                    <th style={{ textAlign: "left", padding: "0.5rem", borderBottom: "1px solid #e2e8f0" }}>Student</th>
+                    <th style={{ textAlign: "left", padding: "0.5rem", borderBottom: "1px solid var(--border-soft)" }}>Student</th>
                     {assignment.symbols.map((symbol) => (
-                      <th key={symbol} style={{ textAlign: "left", padding: "0.5rem", borderBottom: "1px solid #e2e8f0", fontWeight: 600 }}>
+                      <th key={symbol} style={{ textAlign: "left", padding: "0.5rem", borderBottom: "1px solid var(--border-soft)", fontWeight: 600 }}>
                         {symbol}
                       </th>
                     ))}
@@ -1035,20 +1154,20 @@ function AssignmentPage() {
                 <tbody>
                   {students.map((student) => (
                     <tr key={student.id}>
-                      <td style={{ padding: "0.45rem 0.5rem", borderBottom: "1px solid #f1f5f9", fontWeight: 600 }}>{student.name}</td>
+                      <td style={{ padding: "0.45rem 0.5rem", borderBottom: "1px solid var(--border-soft)", fontWeight: 600 }}>{student.name}</td>
                       {assignment.symbols.map((symbol) => {
                         const score = assignment.heatmap[student.id]?.[symbol] ?? 0;
                         const active = selectedCell?.studentId === student.id && selectedCell.symbol === symbol;
                         return (
-                          <td key={`${student.id}-${symbol}`} style={{ padding: "0.3rem 0.45rem", borderBottom: "1px solid #f1f5f9" }}>
+                          <td key={`${student.id}-${symbol}`} style={{ padding: "0.3rem 0.45rem", borderBottom: "1px solid var(--border-soft)" }}>
                             <button
                               onClick={() => setSelectedCell({ studentId: student.id, symbol })}
                               style={{
                                 width: "100%",
-                                border: active ? "2px solid #1d4ed8" : "1px solid #cbd5e1",
+                                border: active ? "2px solid var(--accent)" : "1px solid var(--border)",
                                 borderRadius: 6,
                                 background: scoreColor(score),
-                                color: score >= 65 ? "#fff" : "#0f172a",
+                                color: score >= 65 ? "#fff" : "var(--text-primary)",
                                 padding: "0.35rem",
                                 fontWeight: 700,
                                 cursor: "pointer",
@@ -1066,7 +1185,7 @@ function AssignmentPage() {
               </table>
             </div>
 
-            <div style={{ marginTop: "0.8rem", border: "1px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", padding: "0.75rem" }}>
+            <div style={{ marginTop: "0.8rem", border: "1px solid var(--border-soft)", borderRadius: 8, background: "var(--surface-muted)", padding: "0.75rem" }}>
               <h4 style={{ marginTop: 0, marginBottom: "0.35rem" }}>Narrative Drilldown</h4>
               <p style={{ margin: 0, lineHeight: 1.4 }}>{narrative}</p>
             </div>
@@ -1088,6 +1207,7 @@ function ReplayPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [displayCode, setDisplayCode] = useState("");
+  const [animationNonce, setAnimationNonce] = useState(0);
   const [insights, setInsights] = useState<string[]>([]);
   const [query, setQuery] = useState("");
 
@@ -1146,16 +1266,17 @@ function ReplayPage() {
       canceled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [selectedFilePath, stepIndex, step]);
+  }, [selectedFilePath, stepIndex, step, animationNonce]);
 
   useEffect(() => {
     if (!isPlaying || !step || stepIndex >= steps.length - 1) {
       if (stepIndex >= steps.length - 1) setIsPlaying(false);
       return;
     }
+    const UNIFORM_STEP_DELAY_MS = 1500;
     const timerId = window.setTimeout(
       () => setStepIndex((prev) => Math.min(prev + 1, steps.length - 1)),
-      Math.max(700, step.durationSeconds * 900),
+      UNIFORM_STEP_DELAY_MS,
     );
     return () => window.clearTimeout(timerId);
   }, [isPlaying, step, stepIndex, steps]);
@@ -1164,12 +1285,18 @@ function ReplayPage() {
 
   function playPause() {
     if (steps.length === 0) return;
+    if (isPlaying) {
+      setIsPlaying(false);
+      return;
+    }
     if (stepIndex >= steps.length - 1) {
       setStepIndex(0);
+      setAnimationNonce((prev) => prev + 1);
       setIsPlaying(true);
       return;
     }
-    setIsPlaying((prev) => !prev);
+    setAnimationNonce((prev) => prev + 1);
+    setIsPlaying(true);
   }
 
   function submitInsight(e: React.FormEvent) {
@@ -1187,12 +1314,12 @@ function ReplayPage() {
   return (
     <main style={{ maxWidth: 1280, margin: "0 auto", padding: "1rem 1.1rem 2rem" }}>
       <h1 style={{ marginBottom: "0.25rem" }}>{assignment.title} • Progress Replay</h1>
-      <p style={{ marginTop: 0, color: "#475569" }}>
+      <p style={{ marginTop: 0, color: "var(--text-muted)" }}>
         {student.name} ({student.email})
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
-        <section style={{ border: "1px solid #cbd5e1", borderRadius: 12, background: "white", padding: "0.75rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "220px minmax(460px, 1fr) 380px", gap: "1rem" }}>
+        <section style={{ border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: "0.75rem" }}>
           <h2 style={{ marginTop: 0, fontSize: 18 }}>File Tree</h2>
           <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
             {replayFiles.map((file) => (
@@ -1204,9 +1331,9 @@ function ReplayPage() {
                     width: "100%",
                     textAlign: "left",
                     padding: "0.45rem",
-                    border: "1px solid #cbd5e1",
+                    border: "1px solid var(--border)",
                     borderRadius: 8,
-                    background: selectedFilePath === file.filePath ? "#dbeafe" : "#fff",
+                    background: selectedFilePath === file.filePath ? "var(--accent-soft)" : "var(--surface)",
                     fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
                     fontSize: 12,
                     cursor: "pointer",
@@ -1219,15 +1346,15 @@ function ReplayPage() {
           </ul>
         </section>
 
-        <section style={{ border: "1px solid #cbd5e1", borderRadius: 12, background: "white", padding: "0.75rem" }}>
-          <div style={{ border: "1px solid #1e293b", borderRadius: 8, background: "#0f172a", padding: "0.75rem", marginBottom: "0.8rem" }}>
-            <p style={{ color: "#cbd5e1", marginTop: 0, marginBottom: "0.45rem" }}>
-              Editing <code>{selectedFile?.filePath ?? "-"}</code>
+        <section style={{ border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: "0.75rem" }}>
+          <div style={{ border: "1px solid #1e293b", borderRadius: 8, background: "var(--text-primary)", padding: "0.75rem", marginBottom: "0.8rem" }}>
+            <p style={{ color: "var(--border)", marginTop: 0, marginBottom: "0.45rem" }}>
+              <code>{selectedFile?.filePath ?? "-"}</code>
             </p>
             <pre
               style={{
                 margin: 0,
-                color: "#e2e8f0",
+                color: "var(--border-soft)",
                 minHeight: 280,
                 whiteSpace: "pre-wrap",
                 fontSize: 13,
@@ -1240,10 +1367,10 @@ function ReplayPage() {
           </div>
 
           <div style={{ marginBottom: "0.65rem" }}>
-            <p style={{ marginTop: 0, marginBottom: "0.35rem", fontSize: 12, color: "#64748b" }}>
+            <p style={{ marginTop: 0, marginBottom: "0.35rem", fontSize: 12, color: "var(--text-muted)" }}>
               Timeline ({stepIndex + 1}/{Math.max(steps.length, 1)})
             </p>
-            <div style={{ display: "flex", height: 18, overflow: "hidden", borderRadius: 999, border: "1px solid #cbd5e1" }}>
+            <div style={{ display: "flex", height: 18, overflow: "hidden", borderRadius: 999, border: "1px solid var(--border)" }}>
               {steps.map((entry, idx) => {
                 const width = totalDuration > 0 ? (entry.durationSeconds / totalDuration) * 100 : 0;
                 const active = idx === stepIndex;
@@ -1256,14 +1383,14 @@ function ReplayPage() {
                       setStepIndex(idx);
                     }}
                     title={`${entry.title} (${entry.durationSeconds}s)`}
-                    style={{ width: `${width}%`, border: "none", borderRight: "1px solid #bfdbfe", background: active ? "#2563eb" : "#93c5fd", cursor: "pointer" }}
+                    style={{ width: `${width}%`, border: "none", borderRight: "1px solid var(--accent-soft-2)", background: active ? "var(--accent)" : "var(--accent-soft-2)", cursor: "pointer" }}
                   />
                 );
               })}
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
             <button
               className="btn-icon"
               onClick={() => {
@@ -1315,15 +1442,17 @@ function ReplayPage() {
                 <path d="M4 3L11 8L4 13V3Z" fill="currentColor" />
               </svg>
             </button>
-            <span style={{ fontSize: 12, color: "#64748b" }}>{step?.title ?? "No step selected"}</span>
           </div>
         </section>
 
-        <section style={{ border: "1px solid #cbd5e1", borderRadius: 12, background: "white", padding: "0.75rem", display: "flex", flexDirection: "column", minHeight: 450 }}>
+        <section style={{ border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: "0.75rem", display: "flex", flexDirection: "column", minHeight: 450 }}>
           <h2 style={{ marginTop: 0, fontSize: 18 }}>AI Insights</h2>
-          <div style={{ flex: 1, border: "1px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", padding: "0.6rem", overflowY: "auto", marginBottom: "0.6rem" }}>
+          <p style={{ marginTop: 0, marginBottom: "0.5rem", color: "var(--text-muted)", fontSize: 12 }}>
+            Current Replay Step: {step?.title ?? "No step selected"}
+          </p>
+          <div style={{ flex: 1, border: "1px solid var(--border-soft)", borderRadius: 8, background: "var(--surface-muted)", padding: "0.6rem", overflowY: "auto", marginBottom: "0.6rem" }}>
             {insights.map((line, idx) => (
-              <p key={`${idx}-${line}`} style={{ margin: "0 0 0.5rem", lineHeight: 1.35 }}>
+              <p key={`${idx}-${line}`} style={{ margin: "0 0 0.5rem", lineHeight: 1.35, fontSize: 12 }}>
                 {line}
               </p>
             ))}
@@ -1332,7 +1461,7 @@ function ReplayPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask AI about this student and file..."
+              placeholder="Ask AI about this student"
               style={{ flex: 1, padding: "0.55rem" }}
             />
             <button type="submit" style={{ padding: "0.55rem 0.8rem" }}>
@@ -1349,7 +1478,7 @@ function GenericPage({ title, body }: { title: string; body: string }) {
   return (
     <main style={{ maxWidth: 900, margin: "0 auto", padding: "1rem 1.1rem 2rem" }}>
       <h1>{title}</h1>
-      <p style={{ color: "#475569", lineHeight: 1.5 }}>{body}</p>
+      <p style={{ color: "var(--text-muted)", lineHeight: 1.5 }}>{body}</p>
     </main>
   );
 }
@@ -1358,53 +1487,73 @@ function NotFoundPage() {
   return (
     <main style={{ maxWidth: 900, margin: "0 auto", padding: "1rem 1.1rem 2rem" }}>
       <h1>Not Found</h1>
-      <p style={{ color: "#475569" }}>This page does not exist in the current routing setup.</p>
-      <Link to="/" style={{ color: "#1d4ed8", fontWeight: 700, textDecoration: "none" }}>
+      <p style={{ color: "var(--text-muted)" }}>This page does not exist in the current routing setup.</p>
+      <Link to="/" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
         Back to Dashboard
       </Link>
     </main>
   );
 }
 
-function AuthedApp({ onSignOut }: { onSignOut: () => Promise<void> }) {
+function AuthedApp({
+  onSignOut,
+  theme,
+  onToggleTheme,
+  collapsed,
+  onToggleCollapsed,
+}: {
+  onSignOut: () => Promise<void>;
+  theme: ThemeMode;
+  onToggleTheme: () => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+}) {
   return (
     <BrowserRouter>
-      <div style={appShellStyle}>
-        <Navbar onSignOut={onSignOut} />
-        <Routes>
-          <Route path="/" element={<DashboardPage />} />
-          <Route
-            path="/faq"
-            element={
-              <GenericPage
-                title="FAQ / How To Use"
-                body="Use Dashboard to choose a course, click into assignments, inspect student and class stats, then open Details for per-student replay and AI-supported insight threads."
-              />
-            }
-          />
-          <Route
-            path="/about"
-            element={
-              <GenericPage
-                title="About Our Product"
-                body="JumBud helps instructors identify where students struggle by combining assignment analytics, replay-based development traces, and AI-assisted interpretation of learning behaviors."
-              />
-            }
-          />
-          <Route
-            path="/account"
-            element={
-              <GenericPage
-                title="Account"
-                body="Account settings can be connected here. Current demo includes authentication via Supabase and role-aware course navigation."
-              />
-            }
-          />
-          <Route path="/:courseId" element={<CoursePage />} />
-          <Route path="/:courseId/:assignment" element={<AssignmentPage />} />
-          <Route path="/:courseId/:assignment/:student" element={<ReplayPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+      <div style={appShellStyle} className={`app-shell ${collapsed ? "sidebar-collapsed" : ""}`}>
+        <Navbar
+          onSignOut={onSignOut}
+          theme={theme}
+          onToggleTheme={onToggleTheme}
+          collapsed={collapsed}
+          onToggleCollapsed={onToggleCollapsed}
+        />
+        <div className="content-shell">
+          <Routes>
+            <Route path="/" element={<DashboardPage />} />
+            <Route
+              path="/faq"
+              element={
+                <GenericPage
+                  title="FAQ / How To Use"
+                  body="Use Dashboard to choose a course, click into assignments, inspect student and class stats, then open Details for per-student replay and AI-supported insight threads."
+                />
+              }
+            />
+            <Route
+              path="/about"
+              element={
+                <GenericPage
+                  title="About Our Product"
+                  body="JumBud helps instructors identify where students struggle by combining assignment analytics, replay-based development traces, and AI-assisted interpretation of learning behaviors."
+                />
+              }
+            />
+            <Route
+              path="/account"
+              element={
+                <GenericPage
+                  title="Account"
+                  body="Account settings can be connected here. Current demo includes authentication via Supabase and role-aware course navigation."
+                />
+              }
+            />
+            <Route path="/:courseId" element={<CoursePage />} />
+            <Route path="/:courseId/:assignment" element={<AssignmentPage />} />
+            <Route path="/:courseId/:assignment/:student" element={<ReplayPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
       </div>
     </BrowserRouter>
   );
@@ -1412,6 +1561,11 @@ function AuthedApp({ onSignOut }: { onSignOut: () => Promise<void> }) {
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    const saved = localStorage.getItem("jumbud-theme");
+    return saved === "light" ? "light" : "dark";
+  });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -1420,6 +1574,11 @@ function App() {
     });
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("jumbud-theme", theme);
+  }, [theme]);
 
   async function handleLogin(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -1437,7 +1596,15 @@ function App() {
     return <LoginPage onLogin={handleLogin} />;
   }
 
-  return <AuthedApp onSignOut={handleSignOut} />;
+  return (
+    <AuthedApp
+      onSignOut={handleSignOut}
+      theme={theme}
+      onToggleTheme={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}
+      collapsed={sidebarCollapsed}
+      onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
+    />
+  );
 }
 
 export default App;
