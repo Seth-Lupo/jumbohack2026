@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 """
-Seed local Supabase with a professor account + class.
-Uses service role key to bypass RLS.
-Expects Supabase to be running locally (via docker-compose).
+Seed local Supabase with test data for the full schema.
+Creates: professor, 2 students, 1 TA, 1 course, 1 assignment, sample flushes.
 """
 
 import os
 import sys
+from datetime import datetime, timedelta, timezone
 
 from dotenv import load_dotenv
 from supabase import create_client
 
-# Load .env from project root
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(root, ".env"))
 
@@ -21,48 +20,130 @@ SERVICE_KEY = os.environ.get(
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU",
 )
 
-PROF_EMAIL = "professor@codeactivity.test"
-PROF_PASSWORD = "testpass123"
-CLASS_NAME = "CS 101 - Intro to Computer Science"
-CLASS_CODE = "CS101"
-
 sb = create_client(SUPABASE_URL, SERVICE_KEY)
 
 
-def seed():
-    """Create a professor account and a class."""
-    print("Seeding...")
-
-    # Create class
-    cls = sb.table("classes").insert({"name": CLASS_NAME, "code": CLASS_CODE}).execute()
-    class_id = cls.data[0]["id"]
-    print(f"  Created class: {CLASS_NAME} ({class_id})")
-
-    # Create professor auth user
-    prof = sb.auth.admin.create_user({
-        "email": PROF_EMAIL,
-        "password": PROF_PASSWORD,
+def create_user(email, password, utln, display_name):
+    """Create an auth user and a profile. Returns profile ID."""
+    user = sb.auth.admin.create_user({
+        "email": email,
+        "password": password,
         "email_confirm": True,
-        "user_metadata": {"role": "professor"},
     })
-    prof_id = prof.user.id
-    print(f"  Created professor: {PROF_EMAIL} ({prof_id})")
+    uid = user.user.id
 
-    # Create professor profile
     sb.table("profiles").insert({
-        "id": prof_id,
-        "email": PROF_EMAIL,
-        "display_name": "Professor Test",
-        "role": "professor",
-        "class_id": class_id,
+        "id": uid,
+        "email": email,
+        "utln": utln,
+        "display_name": display_name,
     }).execute()
 
-    print("Seed done.")
-    print()
-    print("=== Test credentials ===")
-    print(f"  Email:    {PROF_EMAIL}")
-    print(f"  Password: {PROF_PASSWORD}")
-    print(f"  Class:    {CLASS_NAME}")
+    return uid
+
+
+def seed():
+    print("Seeding...")
+
+    # --- Users ---
+    prof_id = create_user("professor@codeactivity.test", "testpass123", "mprof01", "Professor Morris")
+    print(f"  Professor: mprof01 ({prof_id})")
+
+    ta_id = create_user("ta@codeactivity.test", "testpass123", "jta0102", "Jane TA")
+    print(f"  TA: jta0102 ({ta_id})")
+
+    stu1_id = create_user("student1@codeactivity.test", "testpass123", "slupo01", "Seth Lupo")
+    print(f"  Student: slupo01 ({stu1_id})")
+
+    stu2_id = create_user("student2@codeactivity.test", "testpass123", "abrow02", "Alice Brown")
+    print(f"  Student: abrow02 ({stu2_id})")
+
+    # --- Course ---
+    course = sb.table("courses").insert({
+        "name": "CS 101 - Intro to Computer Science",
+        "code": "CS101",
+        "professor_id": prof_id,
+    }).execute()
+    course_id = course.data[0]["id"]
+    print(f"  Course: CS101 ({course_id})")
+
+    # --- Memberships ---
+    sb.table("students").insert([
+        {"profile_id": stu1_id, "course_id": course_id},
+        {"profile_id": stu2_id, "course_id": course_id},
+    ]).execute()
+    print("  Enrolled 2 students")
+
+    sb.table("assistants").insert({
+        "profile_id": ta_id,
+        "course_id": course_id,
+    }).execute()
+    print("  Assigned 1 TA")
+
+    # --- Assignment ---
+    assignment = sb.table("assignments").insert({
+        "course_id": course_id,
+        "name": "HW1 - Hello World",
+        "description": "Write a program that prints Hello World",
+    }).execute()
+    assignment_id = assignment.data[0]["id"]
+    print(f"  Assignment: HW1 ({assignment_id})")
+
+    # --- Sample flushes for student1 ---
+    now = datetime.now(timezone.utc)
+    flushes = [
+        {
+            "user_id": stu1_id,
+            "assignment_id": assignment_id,
+            "file_path": "src/main.py",
+            "trigger": "save",
+            "start_timestamp": (now - timedelta(minutes=30)).isoformat(),
+            "end_timestamp": (now - timedelta(minutes=28)).isoformat(),
+            "diffs": "--- /dev/null\n+++ b/src/main.py\n@@ -0,0 +1,2 @@\n+# Hello World\n+print(\"Hello\")\n",
+            "active_symbol": "main.py",
+            "metrics": {
+                "chars_inserted": 32,
+                "chars_deleted": 0,
+                "rewrite_ratio": 0.0,
+                "edit_velocity": 0.27,
+                "lines_touched": 2,
+                "thrash": {"score": 0.0, "thrashing_lines": []},
+                "error_churn": {"introduced": 0, "resolved": 0, "persisting": 0},
+                "delete_rewrite": None,
+                "cursor_reads": {},
+            },
+        },
+        {
+            "user_id": stu1_id,
+            "assignment_id": assignment_id,
+            "file_path": "src/main.py",
+            "trigger": "save",
+            "start_timestamp": (now - timedelta(minutes=10)).isoformat(),
+            "end_timestamp": (now - timedelta(minutes=8)).isoformat(),
+            "diffs": "--- a/src/main.py\n+++ b/src/main.py\n@@ -1,2 +1,2 @@\n # Hello World\n-print(\"Hello\")\n+print(\"Hello, World!\")\n",
+            "active_symbol": "main.py:print",
+            "metrics": {
+                "chars_inserted": 22,
+                "chars_deleted": 16,
+                "rewrite_ratio": 0.42,
+                "edit_velocity": 0.32,
+                "lines_touched": 1,
+                "thrash": {"score": 0.1, "thrashing_lines": []},
+                "error_churn": {"introduced": 0, "resolved": 0, "persisting": 0},
+                "delete_rewrite": None,
+                "cursor_reads": {},
+            },
+        },
+    ]
+    sb.table("flushes").insert(flushes).execute()
+    print(f"  Inserted {len(flushes)} sample flushes for slupo01")
+
+    print("\nSeed done.")
+    print("\n=== Test credentials ===")
+    print("  Professor:  professor@codeactivity.test / testpass123  (utln: mprof01)")
+    print("  TA:         ta@codeactivity.test / testpass123         (utln: jta0102)")
+    print("  Student 1:  student1@codeactivity.test / testpass123   (utln: slupo01)")
+    print("  Student 2:  student2@codeactivity.test / testpass123   (utln: abrow02)")
 
 
 if __name__ == "__main__":
